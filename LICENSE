@@ -1,0 +1,42 @@
+# NetCheck Source-Available License 1.0
+
+Copyright © 2026 pcalsys. All rights reserved.
+
+Permission is granted to any person to download, install, and use NetCheck free of charge, including for personal, educational, and internal commercial purposes, subject to the conditions below.
+
+## Permitted Use
+
+You may:
+
+* Download and use NetCheck.
+* Use NetCheck privately, educationally, or internally within an organization or business.
+* View and study the source code.
+* Fork the repository for personal development, testing, security review, or contributing improvements to the original NetCheck project.
+
+## Restrictions
+
+You may not:
+
+* Sell, rent, sublicense, or commercially redistribute NetCheck.
+* Redistribute NetCheck, its binaries, or substantial portions of its source code as your own product.
+* Publish modified or unmodified versions of NetCheck under another name or brand.
+* Claim NetCheck or substantial portions of its source code as your own work.
+* Remove or alter copyright, attribution, or license notices.
+* Use the NetCheck name, logo, branding, or the name "pcalsys" in a way that suggests that another product is the original NetCheck project or is officially endorsed by its author.
+* Publish releases or installers derived from NetCheck without prior written permission from the copyright holder.
+
+## Contributions
+
+Contributions submitted to the original NetCheck repository may be incorporated into NetCheck.
+
+By submitting a contribution, you grant the NetCheck copyright holder permission to use, modify, distribute, and include that contribution as part of the NetCheck project.
+
+## No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+## Additional Permission
+
+Any use not explicitly permitted by this license requires prior written permission from the copyright holder.

@@ -1,0 +1,27 @@
+# Build output
+**/bin/
+**/obj/
+artifacts/
+
+# Workspace-local tooling
+.dotnet/
+.dotnet10/
+dotnet-install.ps1
+
+# User and IDE state
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test and coverage output
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Local runtime data
+*.log
+*.tmp

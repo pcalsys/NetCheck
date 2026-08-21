@@ -1,0 +1,42 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCheck.Core", "src\NetCheck.Core\NetCheck.Core.csproj", "{A491C5D0-1EB4-4D43-8DF7-012A88C01552}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCheck.Infrastructure", "src\NetCheck.Infrastructure\NetCheck.Infrastructure.csproj", "{4E694744-BDBC-458D-85BE-45B2D4FAE1B0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCheck.App", "src\NetCheck.App\NetCheck.App.csproj", "{C36CE706-1A3E-4FB1-AE23-B6D0366017EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCheck.Core.Tests", "tests\NetCheck.Core.Tests\NetCheck.Core.Tests.csproj", "{2C5BA953-0280-4AE1-8251-85B03BE0173D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCheck.Infrastructure.Tests", "tests\NetCheck.Infrastructure.Tests\NetCheck.Infrastructure.Tests.csproj", "{2C52750F-DCDB-4BD0-A894-43E51643DD90}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A491C5D0-1EB4-4D43-8DF7-012A88C01552}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A491C5D0-1EB4-4D43-8DF7-012A88C01552}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A491C5D0-1EB4-4D43-8DF7-012A88C01552}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A491C5D0-1EB4-4D43-8DF7-012A88C01552}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E694744-BDBC-458D-85BE-45B2D4FAE1B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E694744-BDBC-458D-85BE-45B2D4FAE1B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E694744-BDBC-458D-85BE-45B2D4FAE1B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E694744-BDBC-458D-85BE-45B2D4FAE1B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C36CE706-1A3E-4FB1-AE23-B6D0366017EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C36CE706-1A3E-4FB1-AE23-B6D0366017EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C36CE706-1A3E-4FB1-AE23-B6D0366017EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C36CE706-1A3E-4FB1-AE23-B6D0366017EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C5BA953-0280-4AE1-8251-85B03BE0173D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C5BA953-0280-4AE1-8251-85B03BE0173D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C5BA953-0280-4AE1-8251-85B03BE0173D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C5BA953-0280-4AE1-8251-85B03BE0173D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C52750F-DCDB-4BD0-A894-43E51643DD90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C52750F-DCDB-4BD0-A894-43E51643DD90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C52750F-DCDB-4BD0-A894-43E51643DD90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C52750F-DCDB-4BD0-A894-43E51643DD90}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

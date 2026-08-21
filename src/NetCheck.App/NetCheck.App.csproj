@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>NetCheck.App</RootNamespace>
+    <AssemblyName>NetCheck</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <RuntimeIdentifier Condition="'$(Configuration)' == 'Release'">win-x64</RuntimeIdentifier>
+    <PublishSingleFile Condition="'$(Configuration)' == 'Release'">true</PublishSingleFile>
+    <SelfContained Condition="'$(Configuration)' == 'Release'">true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract Condition="'$(Configuration)' == 'Release'">true</IncludeNativeLibrariesForSelfExtract>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Release'">true</PublishReadyToRun>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetCheck.Core\NetCheck.Core.csproj" />
+    <ProjectReference Include="..\NetCheck.Infrastructure\NetCheck.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

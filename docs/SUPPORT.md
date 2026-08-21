@@ -20,7 +20,14 @@ Open a browser and complete the network sign-in flow, then rerun NetCheck. Hotel
 
 Do not disable organization-managed proxies, VPNs, firewalls, or DNS settings without approval. Export a report and share it with the network administrator. Computer names are excluded by default and MAC addresses are always redacted; still review a report before sharing it outside the organization.
 
+## Fix detected issues
+
+When NetCheck can safely associate a failed check with a supported Windows repair, the dashboard shows **Fix issue**. Review the complete plan before choosing Yes. Windows may request administrator approval for DHCP, cache, Winsock, or TCP/IP repairs.
+
+NetCheck does not automate physical, router, provider, captive-portal, managed static-IP, or Wi-Fi signal repairs. For those cases, follow the manual next steps in the diagnosis. A disabled **Fix unavailable** button means the current evidence does not justify a safe Windows configuration change.
+
+If the result asks for a restart, restart Windows before running another diagnostic. Otherwise NetCheck checks the connection again automatically.
+
 ## Reset settings
 
 Use Settings → Restore defaults → Save settings. If the settings file is malformed or unavailable, NetCheck safely falls back to defaults.
-

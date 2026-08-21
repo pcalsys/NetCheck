@@ -26,17 +26,17 @@ public abstract class DiagnosticCheckBase : IDiagnosticCheck
         string detail = "",
         IReadOnlyDictionary<string, string>? evidence = null,
         IReadOnlyList<string>? recommendations = null) => new()
-    {
-        CheckId = Id,
-        Title = Name,
-        Category = Category,
-        Status = status,
-        Severity = severity,
-        Summary = summary,
-        Detail = detail,
-        Evidence = evidence ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
-        Recommendations = recommendations ?? Array.Empty<string>()
-    };
+        {
+            CheckId = Id,
+            Title = Name,
+            Category = Category,
+            Status = status,
+            Severity = severity,
+            Summary = summary,
+            Detail = detail,
+            Evidence = evidence ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+            Recommendations = recommendations ?? Array.Empty<string>()
+        };
 
     protected DiagnosticCheckResult Skip(string reason) =>
         DiagnosticCheckResult.Skipped(Id, Name, Category, reason);
@@ -45,4 +45,3 @@ public abstract class DiagnosticCheckBase : IDiagnosticCheck
         context.TryGet<DiagnosticCheckResult>($"result:{checkId}", out var result)
         && result?.Status == CheckStatus.Failed;
 }
-

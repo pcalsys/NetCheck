@@ -2,9 +2,11 @@
 
 ## Security model
 
-NetCheck runs with the current user’s permissions and declares `asInvoker` in its application manifest. It does not require administrator rights, install a service or driver, capture packets, modify the registry, reset adapters, flush caches, or change network configuration.
+NetCheck runs with the current user’s permissions and declares `asInvoker` in its application manifest. Diagnostics do not require administrator rights. NetCheck does not install a service or driver, capture packets, or make a repair without an explicit confirmation.
 
-Diagnostics are intentionally observational. Recommended repair commands are displayed as guidance and are never executed by the application.
+Diagnostics are intentionally observational. For supported Windows configuration failures, the Fix workflow displays an evidence-based repair plan before execution. Plans may renew DHCP, clear DNS or ARP caches, disable the current user’s identified proxy configuration, or reset Winsock and TCP/IP components. Physical links, static or managed addressing, captive portals, signal quality, routers, and provider infrastructure are never changed automatically.
+
+Repairs requiring administrator rights run in a short-lived elevated NetCheck helper after UAC approval. The elevation boundary accepts only a validated operation identifier and a bounded list of known repair enums. Native Windows tools are invoked directly with structured arguments; arbitrary command text and shell execution are not supported. Temporary request and result files are deleted after the operation. Winsock and TCP/IP resets require a Windows restart.
 
 ## Network activity
 
@@ -25,4 +27,3 @@ Exports always redact MAC addresses. The Windows computer name is redacted unles
 ## Reporting a vulnerability
 
 Do not include private diagnostic reports, credentials, or internal network details in a public issue. Provide the smallest reproducible example and remove identifying evidence before sharing it with the project maintainer.
-

@@ -48,7 +48,7 @@ public sealed class WebConnectivityDiagnosticCheck : DiagnosticCheckBase
         {
             Timeout = TimeSpan.FromSeconds(Math.Clamp(context.Options.HttpTimeoutSeconds, 2, 30))
         };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("NetCheck/1.0");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("NetCheck/1.2");
 
         try
         {
@@ -156,4 +156,3 @@ public sealed class WebConnectivityDiagnosticCheck : DiagnosticCheckBase
         return new string(buffer, 0, count);
     }
 }
-

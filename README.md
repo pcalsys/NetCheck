@@ -1,12 +1,15 @@
 # NetCheck
 
-NetCheck is a native Windows desktop application that explains *why* a computer has no internet access, limited connectivity, or an unstable connection. It performs a read-only assessment, correlates the evidence, and presents a plain-language diagnosis with safe next steps.
+NetCheck is a native Windows desktop application that explains *why* a computer has no internet access, limited connectivity, or an unstable connection. It performs a read-only assessment, correlates the evidence, presents a plain-language diagnosis, and can apply an explicitly approved repair plan for supported Windows configuration problems.
 
-## What is new in 1.1
+## What is new in 1.2
 
-- A completely refreshed interface with clearer hierarchy, friendlier guidance, and modern status cards
+- A **Fix issue** button that builds a repair plan from the actual diagnostic evidence
+- Clear confirmation of every proposed change before anything runs
+- Supported repairs for DHCP, DNS cache, ARP cache, user proxy, Winsock, and TCP/IP problems
+- Administrator approval only for the specific repairs that require it
+- Automatic post-repair diagnostics when a Windows restart is not required
 - A persistent English/German navigation switch in the sidebar
-- Redesigned dashboard, report history, and settings experiences
 - English remains the default for diagnoses, settings, evidence, and exported reports
 
 See the [changelog](CHANGELOG.md) for release details.
@@ -31,11 +34,12 @@ The diagnosis engine correlates results instead of treating every failed ping as
 - Friendly, modern WPF dashboard with live progress and cancellation
 - Switchable English or German navigation menu; diagnostic content remains in English
 - Plain-language overall diagnosis and prioritized next steps
+- Evidence-based repair plans with per-step results and restart guidance
 - Expandable technical evidence for every check
 - Local diagnostic history with report review
 - Privacy-aware HTML, JSON, and text export
 - Configurable endpoints, timeouts, sample count, and quality thresholds
-- No administrator rights and no automatic network-setting changes
+- Diagnostics run without elevation; repairs are never automatic and may request UAC after confirmation
 - Keyboard navigation, high-contrast status text, and automation labels
 
 ## Requirements
@@ -72,11 +76,13 @@ Create a self-contained Windows x64 release and ZIP archive:
 .\scripts\publish.ps1
 ```
 
-Outputs are written under `artifacts\publish\win-x64` and `artifacts\NetCheck-1.1.0-win-x64.zip`.
+Outputs are written under `artifacts\publish\win-x64` and `artifacts\NetCheck-1.2.0-win-x64.zip`.
 
 ## Privacy and data
 
 NetCheck sends only the traffic required by its configured checks: DNS lookup, ICMP echo requests, and one lightweight HTTP connectivity request. The defaults are visible and editable in Settings.
+
+The Fix workflow runs only after confirmation. It may renew DHCP, clear DNS or ARP caches, disable an identified current-user proxy, or reset Windows network components. NetCheck does not attempt to change physical connectivity, managed static addressing, captive portals, Wi-Fi signal quality, router configuration, or provider infrastructure.
 
 Local files are stored in `%LOCALAPPDATA%\NetCheck`:
 

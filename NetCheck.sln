@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCheck.Core.Tests", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCheck.Infrastructure.Tests", "tests\NetCheck.Infrastructure.Tests\NetCheck.Infrastructure.Tests.csproj", "{2C52750F-DCDB-4BD0-A894-43E51643DD90}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCheck.App.Tests", "tests\NetCheck.App.Tests\NetCheck.App.Tests.csproj", "{7B8C54E3-D22F-4E14-A1BB-3FCE56658D2A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,5 +40,9 @@ Global
 		{2C52750F-DCDB-4BD0-A894-43E51643DD90}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C52750F-DCDB-4BD0-A894-43E51643DD90}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2C52750F-DCDB-4BD0-A894-43E51643DD90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B8C54E3-D22F-4E14-A1BB-3FCE56658D2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B8C54E3-D22F-4E14-A1BB-3FCE56658D2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B8C54E3-D22F-4E14-A1BB-3FCE56658D2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B8C54E3-D22F-4E14-A1BB-3FCE56658D2A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

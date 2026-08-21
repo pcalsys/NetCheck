@@ -107,14 +107,13 @@ public sealed class DiagnosisAnalyzerTests
         CheckStatus status,
         string summary,
         IReadOnlyList<string>? recommendations = null) => new()
-    {
-        CheckId = id,
-        Title = id,
-        Category = DiagnosticCategory.Internet,
-        Status = status,
-        Severity = status == CheckStatus.Failed ? FindingSeverity.Critical : FindingSeverity.Information,
-        Summary = summary,
-        Recommendations = recommendations ?? Array.Empty<string>()
-    };
+        {
+            CheckId = id,
+            Title = id,
+            Category = DiagnosticCategory.Internet,
+            Status = status,
+            Severity = status == CheckStatus.Failed ? FindingSeverity.Critical : FindingSeverity.Information,
+            Summary = summary,
+            Recommendations = recommendations ?? Array.Empty<string>()
+        };
 }
-

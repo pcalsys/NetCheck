@@ -2,12 +2,13 @@
 
 ## Design goals
 
-NetCheck is designed around four constraints:
+NetCheck is designed around five constraints:
 
 1. Diagnostics must be read-only and work without elevation.
 2. One failed or unsupported probe must not abort the assessment.
 3. Technical evidence and user-facing diagnosis must remain separate.
 4. Windows-specific code must not leak into the domain or presentation logic.
+5. Repairs must be evidence-based, explicitly approved, bounded to known actions, and independently reported.
 
 ## Layers
 
@@ -52,6 +53,14 @@ Every probe executes inside an exception boundary. Cancellation returns a partia
 
 This ordering keeps downstream symptoms from obscuring an earlier root cause.
 
+## Repair execution
+
+`NetworkRepairPlanner` maps correlated diagnostic results to the smallest applicable set of known repair actions. It deliberately returns manual guidance instead of an executable action for physical link failures, managed or static IP configuration, captive portals, isolated ICMP blocking, and connection-quality problems.
+
+The dashboard displays every proposed change before execution. Repairs never begin automatically. When a plan needs administrator rights, the normal `asInvoker` application starts a short-lived elevated copy of itself with an opaque operation identifier. The helper accepts only validated `NetworkRepairActionId` values and invokes fixed Windows executables with structured argument lists; no arbitrary command or shell text crosses the elevation boundary. Results are returned per action through bounded temporary JSON files and then removed.
+
+Repairs that do not require a restart are followed by a fresh diagnostic. Winsock and TCP/IP resets report that Windows must restart before verification.
+
 ## Persistence
 
 History stores one JSON file per report under the current user’s local application data directory. Settings use a separate JSON file. Writes use a temporary sibling file followed by an atomic replacement, preventing a process interruption from leaving a partially written file.
@@ -68,7 +77,7 @@ The exporter supports HTML, JSON, and plain text. HTML values are encoded before
 - Expected file and permission failures are explained in the UI.
 - Unhandled WPF, task, and AppDomain exceptions are logged locally.
 - Logging failures are swallowed to prevent recursive crashes.
-- NetCheck never attempts an automatic repair or requests elevation.
+- Repairs are opt-in, show their complete plan, and request elevation only after confirmation.
 
 ## Extension points
 

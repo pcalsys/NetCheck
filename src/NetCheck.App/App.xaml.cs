@@ -18,9 +18,19 @@ public partial class App : Application
     private JsonSettingsStore? _settingsStore;
     private FileLogger? _logger;
 
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        if (WindowsNetworkRepairService.IsHelperInvocation(e.Args))
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            var exitCode = await WindowsNetworkRepairService
+                .RunElevatedHelperAsync(e.Args)
+                .ConfigureAwait(true);
+            Shutdown(exitCode);
+            return;
+        }
 
         var paths = new AppDataPaths();
         _logger = new FileLogger(paths.LogFile);
@@ -48,6 +58,8 @@ public partial class App : Application
             new WindowsNetworkSnapshotProvider(),
             new DiagnosisAnalyzer());
         var exporter = new ReportExporter();
+        var repairPlanner = new NetworkRepairPlanner();
+        var repairService = new WindowsNetworkRepairService();
         var dialogService = new FileDialogService();
         var messageService = new MessageService();
 
@@ -56,6 +68,8 @@ public partial class App : Application
             _historyStore,
             exporter,
             _settingsStore,
+            repairPlanner,
+            repairService,
             dialogService,
             messageService,
             _logger);
@@ -88,7 +102,7 @@ public partial class App : Application
     {
         _logger?.Error("Unhandled UI exception.", e.Exception);
         MessageBox.Show(
-            "NetCheck encountered an unexpected error. The error was logged locally, and no network settings were changed.",
+            "NetCheck encountered an unexpected error. The error was logged locally. Repairs never run without your approval.",
             "NetCheck error",
             MessageBoxButton.OK,
             MessageBoxImage.Error);

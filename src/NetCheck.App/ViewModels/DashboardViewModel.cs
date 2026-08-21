@@ -16,14 +16,20 @@ public sealed class DashboardViewModel : ObservableObject
     private readonly IReportHistoryStore _historyStore;
     private readonly IReportExporter _reportExporter;
     private readonly ISettingsStore _settingsStore;
+    private readonly INetworkRepairPlanner _repairPlanner;
+    private readonly INetworkRepairService _repairService;
     private readonly IFileDialogService _fileDialogService;
     private readonly IMessageService _messageService;
     private readonly FileLogger _logger;
     private CancellationTokenSource? _runCancellation;
     private DiagnosticReport? _report;
     private DiagnosticOptions _settings = new();
+    private NetworkRepairPlan _repairPlan = NetworkRepairPlan.Empty;
+    private NetworkRepairResult? _repairResult;
     private bool _isRunning;
+    private bool _isRepairing;
     private bool _isInitialized;
+    private bool _preserveRepairResultDuringVerification;
     private int _progressPercentage;
     private string _currentCheckName = string.Empty;
 
@@ -32,6 +38,8 @@ public sealed class DashboardViewModel : ObservableObject
         IReportHistoryStore historyStore,
         IReportExporter reportExporter,
         ISettingsStore settingsStore,
+        INetworkRepairPlanner repairPlanner,
+        INetworkRepairService repairService,
         IFileDialogService fileDialogService,
         IMessageService messageService,
         FileLogger logger)
@@ -40,16 +48,20 @@ public sealed class DashboardViewModel : ObservableObject
         _historyStore = historyStore ?? throw new ArgumentNullException(nameof(historyStore));
         _reportExporter = reportExporter ?? throw new ArgumentNullException(nameof(reportExporter));
         _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
+        _repairPlanner = repairPlanner ?? throw new ArgumentNullException(nameof(repairPlanner));
+        _repairService = repairService ?? throw new ArgumentNullException(nameof(repairService));
         _fileDialogService = fileDialogService ?? throw new ArgumentNullException(nameof(fileDialogService));
         _messageService = messageService ?? throw new ArgumentNullException(nameof(messageService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        RunCommand = new AsyncRelayCommand(RunAsync, () => !IsRunning);
+        RunCommand = new AsyncRelayCommand(RunAsync, () => !IsRunning && !IsRepairing);
         CancelCommand = new RelayCommand(Cancel, () => IsRunning);
-        ExportCommand = new AsyncRelayCommand(ExportAsync, () => Report is not null && !IsRunning);
-        CopySummaryCommand = new RelayCommand(CopySummary, () => Report is not null);
+        ExportCommand = new AsyncRelayCommand(ExportAsync, () => Report is not null && !IsRunning && !IsRepairing);
+        CopySummaryCommand = new RelayCommand(CopySummary, () => Report is not null && !IsRepairing);
+        FixCommand = new AsyncRelayCommand(FixAsync, () => CanFix);
         AttachFailureHandler(RunCommand, "running diagnostics");
         AttachFailureHandler(ExportCommand, "exporting a report");
+        AttachFailureHandler(FixCommand, "repairing the network");
     }
 
     public ObservableCollection<DiagnosticCheckResult> Results { get; } = [];
@@ -62,6 +74,8 @@ public sealed class DashboardViewModel : ObservableObject
 
     public RelayCommand CopySummaryCommand { get; }
 
+    public AsyncRelayCommand FixCommand { get; }
+
     public DiagnosticReport? Report
     {
         get => _report;
@@ -70,6 +84,14 @@ public sealed class DashboardViewModel : ObservableObject
             if (!SetProperty(ref _report, value))
             {
                 return;
+            }
+
+            RepairPlan = value is null
+                ? NetworkRepairPlan.Empty
+                : _repairPlanner.CreatePlan(value);
+            if (!_preserveRepairResultDuringVerification)
+            {
+                RepairResult = null;
             }
 
             OnPropertiesChanged(
@@ -82,9 +104,14 @@ public sealed class DashboardViewModel : ObservableObject
                 nameof(PrimaryGateway),
                 nameof(PrimaryDnsServer),
                 nameof(CompletedText),
-                nameof(HasRecommendations));
+                nameof(HasRecommendations),
+                nameof(CanFix),
+                nameof(ShowFixButton),
+                nameof(FixButtonText),
+                nameof(FixButtonToolTip));
             ExportCommand.RaiseCanExecuteChanged();
             CopySummaryCommand.RaiseCanExecuteChanged();
+            FixCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -98,10 +125,62 @@ public sealed class DashboardViewModel : ObservableObject
                 return;
             }
 
-            OnPropertiesChanged(nameof(StatusTitle), nameof(StatusSummary));
+            OnPropertiesChanged(nameof(StatusTitle), nameof(StatusSummary), nameof(CanFix), nameof(FixButtonText));
             RunCommand.RaiseCanExecuteChanged();
             CancelCommand.RaiseCanExecuteChanged();
             ExportCommand.RaiseCanExecuteChanged();
+            CopySummaryCommand.RaiseCanExecuteChanged();
+            FixCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public bool IsRepairing
+    {
+        get => _isRepairing;
+        private set
+        {
+            if (!SetProperty(ref _isRepairing, value))
+            {
+                return;
+            }
+
+            OnPropertiesChanged(
+                nameof(StatusTitle),
+                nameof(StatusSummary),
+                nameof(CanFix),
+                nameof(FixButtonText));
+            RunCommand.RaiseCanExecuteChanged();
+            ExportCommand.RaiseCanExecuteChanged();
+            CopySummaryCommand.RaiseCanExecuteChanged();
+            FixCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public NetworkRepairPlan RepairPlan
+    {
+        get => _repairPlan;
+        private set
+        {
+            if (SetProperty(ref _repairPlan, value))
+            {
+                OnPropertiesChanged(nameof(CanFix), nameof(FixButtonText), nameof(FixButtonToolTip));
+                FixCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public NetworkRepairResult? RepairResult
+    {
+        get => _repairResult;
+        private set
+        {
+            if (SetProperty(ref _repairResult, value))
+            {
+                OnPropertiesChanged(
+                    nameof(HasRepairResult),
+                    nameof(RepairResultTitle),
+                    nameof(RepairResultSummary));
+            }
         }
     }
 
@@ -127,18 +206,64 @@ public sealed class DashboardViewModel : ObservableObject
 
     public bool HasRecommendations => Report?.Diagnosis.RecommendedActions.Count > 0;
 
+    public bool CanFix => Report is not null && RepairPlan.CanExecute && !IsRunning && !IsRepairing;
+
+    public bool ShowFixButton => Report?.Diagnosis.Outcome is DiagnosticOutcome.Attention or DiagnosticOutcome.Problem;
+
+    public bool HasRepairResult => RepairResult is not null;
+
+    public string FixButtonText => IsRepairing
+        ? "Fixing issues…"
+        : !RepairPlan.CanExecute
+            ? "Fix unavailable"
+        : RepairPlan.Actions.Count == 1
+            ? "Fix issue"
+            : $"Fix {RepairPlan.Actions.Count} issues";
+
+    public string FixButtonToolTip => RepairPlan.CanExecute
+        ? "Review and apply the repair plan for the detected issues."
+        : "This issue needs a manual, physical, router, or provider fix; no safe Windows repair matches the evidence.";
+
+    public string RepairResultTitle => RepairResult switch
+    {
+        null => string.Empty,
+        { Cancelled: true } => "Repair cancelled",
+        { Succeeded: true } => "Approved repairs were applied",
+        { HasAppliedChanges: true } => "Some repairs were applied",
+        _ => "Repairs could not be applied"
+    };
+
+    public string RepairResultSummary => RepairResult switch
+    {
+        null => string.Empty,
+        { Cancelled: true } => "No changes were made because administrator approval was cancelled.",
+        { Succeeded: true, RequiresRestart: true } =>
+            "Restart Windows to finish the network-stack repair, then run NetCheck again.",
+        { Succeeded: true } =>
+            "NetCheck applied the repair plan and checked the connection again.",
+        { HasAppliedChanges: true, RequiresRestart: true } =>
+            "Windows applied part of the plan. Restart the computer before checking again.",
+        { HasAppliedChanges: true } =>
+            "Windows applied part of the plan and NetCheck checked the connection again.",
+        _ => "Review the failed steps below and use the recommended manual next steps."
+    };
+
     public DiagnosticOutcome StatusOutcome => Report?.Diagnosis.Outcome ?? DiagnosticOutcome.Unknown;
 
-    public string StatusTitle => IsRunning
-        ? "Checking your connection"
-        : Report?.Diagnosis.Headline ?? "Ready to diagnose your network";
+    public string StatusTitle => IsRepairing
+        ? "Applying approved repairs"
+        : IsRunning
+            ? "Checking your connection"
+            : Report?.Diagnosis.Headline ?? "Ready to diagnose your network";
 
-    public string StatusSummary => IsRunning
-        ? string.IsNullOrWhiteSpace(CurrentCheckName)
-            ? "Preparing network checks…"
-            : $"Running {CurrentCheckName.ToLowerInvariant()}…"
-        : Report?.Diagnosis.Summary
-          ?? "NetCheck will test the adapter, local network, DNS, internet access, and connection quality.";
+    public string StatusSummary => IsRepairing
+        ? "Windows may ask for administrator approval. NetCheck will only run the repairs shown in the confirmation."
+        : IsRunning
+            ? string.IsNullOrWhiteSpace(CurrentCheckName)
+                ? "Preparing network checks…"
+                : $"Running {CurrentCheckName.ToLowerInvariant()}…"
+            : Report?.Diagnosis.Summary
+              ?? "NetCheck will test the adapter, local network, DNS, internet access, and connection quality.";
 
     public string PrimaryAdapterName => Report?.Network.PrimaryAdapter?.Name ?? "Not available";
 
@@ -169,7 +294,7 @@ public sealed class DashboardViewModel : ObservableObject
 
     private async Task RunAsync()
     {
-        if (IsRunning)
+        if (IsRunning || IsRepairing)
         {
             return;
         }
@@ -248,6 +373,67 @@ public sealed class DashboardViewModel : ObservableObject
     }
 
     private void Cancel() => _runCancellation?.Cancel();
+
+    private async Task FixAsync()
+    {
+        var plan = RepairPlan;
+        if (!CanFix || !plan.CanExecute)
+        {
+            return;
+        }
+
+        var message = new StringBuilder();
+        message.AppendLine("NetCheck can try these repairs:");
+        message.AppendLine();
+        foreach (var action in plan.Actions)
+        {
+            message.AppendLine($"• {action.Title}");
+            message.AppendLine($"  {action.Description}");
+        }
+
+        if (plan.RequiresElevation)
+        {
+            message.AppendLine();
+            message.AppendLine("Windows will ask for administrator approval.");
+        }
+
+        if (plan.RequiresRestart)
+        {
+            message.AppendLine("One or more repairs require a Windows restart.");
+        }
+
+        message.AppendLine();
+        message.Append("Only the listed changes will be made. Continue?");
+        if (!_messageService.Confirm("Fix detected network issues?", message.ToString()))
+        {
+            return;
+        }
+
+        IsRepairing = true;
+        NetworkRepairResult result;
+        try
+        {
+            result = await _repairService.ExecuteAsync(plan).ConfigureAwait(true);
+            RepairResult = result;
+        }
+        finally
+        {
+            IsRepairing = false;
+        }
+
+        if (!result.Cancelled && result.HasAppliedChanges && !result.RequiresRestart)
+        {
+            _preserveRepairResultDuringVerification = true;
+            try
+            {
+                await RunAsync().ConfigureAwait(true);
+            }
+            finally
+            {
+                _preserveRepairResultDuringVerification = false;
+            }
+        }
+    }
 
     private async Task ExportAsync()
     {

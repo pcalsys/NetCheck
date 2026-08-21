@@ -2,6 +2,22 @@
 
 All notable changes to NetCheck are documented here.
 
+## 1.2.0 — 2026-08-21
+
+### Added
+
+- Evidence-based **Fix issue** workflow on the diagnostic dashboard
+- Explicit repair-plan confirmation, UAC boundary, per-step outcomes, and restart guidance
+- Supported DHCP renewal, DNS and ARP cache refresh, user-proxy reset, Winsock reset, and TCP/IP reset
+- Automatic post-repair diagnostics when no restart is required
+- Repair-planner tests covering safe automation and manual-only boundaries
+
+### Security
+
+- Elevated repair helper accepts only validated, bounded action identifiers
+- Native Windows tools use structured argument lists without arbitrary shell commands
+- Physical, managed/static, captive-portal, isolated ping, and stability issues remain manual-only
+
 ## 1.1.0 — 2026-08-21
 
 ### Added

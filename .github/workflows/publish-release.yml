@@ -1,0 +1,144 @@
+name: Publish release assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build and publish
+        required: true
+        default: v1.3.0
+        type: string
+
+concurrency:
+  group: publish-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish-release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Validate release tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = '${{ inputs.tag }}'
+          if ($tag -notmatch '^v\d+\.\d+\.\d+$') {
+            throw "The release tag must use the vMAJOR.MINOR.PATCH format. Received: $tag"
+          }
+
+          "version=$($tag.Substring(1))" >> $env:GITHUB_OUTPUT
+
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build self-contained Windows package
+        shell: pwsh
+        run: ./scripts/publish.ps1 -Version '${{ steps.version.outputs.version }}'
+
+      - name: Generate SHA-256 checksum
+        id: checksum
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $archive = Join-Path $PWD "artifacts/NetCheck-$version-win-x64.zip"
+          if (-not (Test-Path -LiteralPath $archive)) {
+            throw "Release archive was not created: $archive"
+          }
+
+          $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+          $checksumFile = "$archive.sha256"
+          $checksumLine = "$hash  $([IO.Path]::GetFileName($archive))"
+          [IO.File]::WriteAllText($checksumFile, $checksumLine, [Text.Encoding]::ASCII)
+
+          "sha256=$hash" >> $env:GITHUB_OUTPUT
+          "archive=$archive" >> $env:GITHUB_OUTPUT
+          "checksum_file=$checksumFile" >> $env:GITHUB_OUTPUT
+
+      - name: Upload release assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload '${{ inputs.tag }}' `
+            '${{ steps.checksum.outputs.archive }}' `
+            '${{ steps.checksum.outputs.checksum_file }}' `
+            --clobber `
+            --repo $env:GITHUB_REPOSITORY
+
+      - name: Update release integrity information
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = '${{ inputs.tag }}'
+          $hash = '${{ steps.checksum.outputs.sha256 }}'
+          $release = gh release view $tag --repo $env:GITHUB_REPOSITORY --json body | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not read release $tag."
+          }
+
+          $body = [string]$release.body
+          $hashPattern = '(?i)\b[0-9a-f]{64}\b'
+          if ([regex]::IsMatch($body, $hashPattern)) {
+            $updatedBody = [regex]::Replace($body, $hashPattern, $hash, 1)
+          } else {
+            $updatedBody = $body.TrimEnd() + "`n`n## Integrity`n`nSHA-256: ``$hash``"
+          }
+
+          $notesFile = Join-Path $env:RUNNER_TEMP 'NetCheck-release-notes.md'
+          [IO.File]::WriteAllText($notesFile, $updatedBody, [Text.UTF8Encoding]::new($false))
+          gh release edit $tag --repo $env:GITHUB_REPOSITORY --notes-file $notesFile
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not update release notes for $tag."
+          }
+
+      - name: Verify published assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = '${{ inputs.tag }}'
+          $version = '${{ steps.version.outputs.version }}'
+          $expectedHash = '${{ steps.checksum.outputs.sha256 }}'
+          $archive = '${{ steps.checksum.outputs.archive }}'
+          $checksumFile = '${{ steps.checksum.outputs.checksum_file }}'
+          $release = gh release view $tag --repo $env:GITHUB_REPOSITORY --json assets,url | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not verify release $tag."
+          }
+
+          $archiveName = "NetCheck-$version-win-x64.zip"
+          $checksumName = "$archiveName.sha256"
+          $remoteArchive = $release.assets | Where-Object name -eq $archiveName | Select-Object -First 1
+          $remoteChecksum = $release.assets | Where-Object name -eq $checksumName | Select-Object -First 1
+          if ($null -eq $remoteArchive -or $null -eq $remoteChecksum) {
+            throw 'One or more release assets are missing.'
+          }
+
+          if ([int64]$remoteArchive.size -ne (Get-Item -LiteralPath $archive).Length) {
+            throw 'The published archive size does not match the local package.'
+          }
+
+          if ([int64]$remoteChecksum.size -ne (Get-Item -LiteralPath $checksumFile).Length) {
+            throw 'The published checksum size does not match the local checksum file.'
+          }
+
+          if ($remoteArchive.digest -and $remoteArchive.digest -ne "sha256:$($expectedHash.ToLowerInvariant())") {
+            throw 'The published archive digest does not match the generated SHA-256 value.'
+          }
+
+          "### NetCheck $version release assets published" >> $env:GITHUB_STEP_SUMMARY
+          "- Release: $($release.url)" >> $env:GITHUB_STEP_SUMMARY
+          "- SHA-256: ``$expectedHash``" >> $env:GITHUB_STEP_SUMMARY

@@ -24,7 +24,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore NetCheck.sln
+        run: dotnet restore NetCheck.sln --property:Configuration=Release
 
       - name: Build
         run: dotnet build NetCheck.sln --configuration Release --no-restore --nologo

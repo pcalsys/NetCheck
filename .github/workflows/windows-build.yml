@@ -16,10 +16,10 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
 
@@ -36,7 +36,7 @@ jobs:
         run: dotnet publish src/NetCheck.App/NetCheck.App.csproj --configuration Release --runtime win-x64 --self-contained true --no-build --output artifacts/publish/win-x64 --nologo
 
       - name: Upload application
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: NetCheck-win-x64
           path: artifacts/publish/win-x64

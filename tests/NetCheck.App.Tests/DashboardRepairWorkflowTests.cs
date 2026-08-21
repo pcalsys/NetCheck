@@ -1,4 +1,5 @@
 using System.IO;
+using NetCheck.App.Localization;
 using NetCheck.App.Services;
 using NetCheck.App.ViewModels;
 using NetCheck.Core.Abstractions;
@@ -66,7 +67,10 @@ public sealed class DashboardRepairWorkflowTests
     private static DashboardViewModel CreateViewModel(
         IDiagnosticEngine diagnosticEngine,
         INetworkRepairService repairService,
-        IMessageService messageService) => new(
+        IMessageService messageService)
+    {
+        var text = new LocalizationService();
+        return new DashboardViewModel(
             diagnosticEngine,
             new StubHistoryStore(),
             new StubReportExporter(),
@@ -75,7 +79,10 @@ public sealed class DashboardRepairWorkflowTests
             repairService,
             new StubFileDialogService(),
             messageService,
+            text,
+            new ReportLocalizationService(text),
             new FileLogger(Path.Combine(Path.GetTempPath(), "NetCheck.Tests", "dashboard-repair.log")));
+    }
 
     private static DiagnosticReport CreateDnsFailureReport()
     {

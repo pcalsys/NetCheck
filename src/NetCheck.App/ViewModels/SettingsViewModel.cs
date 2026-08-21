@@ -1,4 +1,5 @@
 using System.Net;
+using NetCheck.App.Localization;
 using NetCheck.App.Mvvm;
 using NetCheck.App.Services;
 using NetCheck.Core.Abstractions;
@@ -11,6 +12,7 @@ public sealed class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsStore _settingsStore;
     private readonly IMessageService _messageService;
+    private readonly LocalizationService _text;
     private readonly FileLogger _logger;
     private DiagnosticOptions _loaded = new();
     private string _dnsTestHost = string.Empty;
@@ -24,15 +26,18 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _saveDiagnosticHistory;
     private bool _includeComputerNameInExports;
     private string _statusMessage = string.Empty;
+    private string _statusMessageSource = string.Empty;
     private bool _isBusy;
 
     public SettingsViewModel(
         ISettingsStore settingsStore,
         IMessageService messageService,
+        LocalizationService text,
         FileLogger logger)
     {
         _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
         _messageService = messageService ?? throw new ArgumentNullException(nameof(messageService));
+        _text = text ?? throw new ArgumentNullException(nameof(text));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsBusy);
@@ -40,7 +45,7 @@ public sealed class SettingsViewModel : ObservableObject
         SaveCommand.ExecutionFailed += (_, exception) =>
         {
             _logger.Error("Settings operation failed.", exception);
-            _messageService.ShowError("Settings could not be saved", exception.Message);
+            _messageService.ShowError(_text.Translate("Settings could not be saved"), exception.Message);
         };
     }
 
@@ -127,6 +132,11 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
+    public void RefreshLocalization()
+    {
+        StatusMessage = _text.Translate(_statusMessageSource);
+    }
+
     public async Task LoadAsync()
     {
         IsBusy = true;
@@ -134,7 +144,7 @@ public sealed class SettingsViewModel : ObservableObject
         {
             _loaded = await _settingsStore.LoadAsync().ConfigureAwait(true);
             Apply(_loaded);
-            StatusMessage = string.Empty;
+            SetStatusMessage(string.Empty);
         }
         finally
         {
@@ -144,10 +154,11 @@ public sealed class SettingsViewModel : ObservableObject
 
     private async Task SaveAsync()
     {
-        StatusMessage = string.Empty;
+        SetStatusMessage(string.Empty);
         if (!TryBuildSettings(out var settings, out var error))
         {
-            StatusMessage = error;
+            _statusMessageSource = error;
+            StatusMessage = _text.Translate(error);
             return;
         }
 
@@ -157,7 +168,7 @@ public sealed class SettingsViewModel : ObservableObject
             await _settingsStore.SaveAsync(settings!).ConfigureAwait(true);
             _loaded = settings!;
             Apply(_loaded);
-            StatusMessage = "Settings saved. They will be used for the next diagnostic.";
+            SetStatusMessage("Settings saved. They will be used for the next diagnostic.");
         }
         finally
         {
@@ -236,7 +247,7 @@ public sealed class SettingsViewModel : ObservableObject
     private void ResetToDefaults()
     {
         Apply(new DiagnosticOptions());
-        StatusMessage = "Defaults restored in the form. Choose Save settings to apply them.";
+        SetStatusMessage("Defaults restored in the form. Choose Save settings to apply them.");
     }
 
     private void Apply(DiagnosticOptions settings)
@@ -252,5 +263,10 @@ public sealed class SettingsViewModel : ObservableObject
         SaveDiagnosticHistory = settings.SaveDiagnosticHistory;
         IncludeComputerNameInExports = settings.IncludeComputerNameInExports;
     }
-}
 
+    private void SetStatusMessage(string source)
+    {
+        _statusMessageSource = source;
+        StatusMessage = _text.Translate(source);
+    }
+}

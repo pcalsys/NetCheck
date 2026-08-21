@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text.Json;
+using NetCheck.Core.Abstractions;
 using NetCheck.Infrastructure.Export;
 
 namespace NetCheck.Infrastructure.Tests;
@@ -44,5 +46,41 @@ public sealed class ReportExporterTests
         Assert.Contains("All checks passed &amp; completed.", html);
         Assert.DoesNotContain("<healthy>", html);
     }
-}
 
+    [Fact]
+    public async Task ExportHtml_UsesSelectedPresentationLanguage()
+    {
+        using var directory = new TemporaryDirectory();
+        var destination = Path.Combine(directory.Path, "bericht.html");
+        var exporter = new ReportExporter(new StubGermanLocalizer());
+
+        await exporter.ExportAsync(
+            TestReportFactory.Create(),
+            destination,
+            includeComputerName: false);
+
+        var html = await File.ReadAllTextAsync(destination);
+        Assert.Contains("<html lang=\"de\">", html);
+        Assert.Contains("Abgeschlossen", html);
+        Assert.Contains("Bericht", html);
+    }
+
+    private sealed class StubGermanLocalizer : ITextLocalizer
+    {
+        public string Language => "de";
+
+        public CultureInfo Culture => CultureInfo.GetCultureInfo("de-DE");
+
+        public string Translate(string source) => source switch
+        {
+            "Completed" => "Abgeschlossen",
+            "Report" => "Bericht",
+            "NetCheck report" => "NetCheck-Bericht",
+            "Redacted" => "Ausgeblendet",
+            _ => source
+        };
+
+        public string Format(string sourceFormat, params object?[] arguments) =>
+            string.Format(Culture, Translate(sourceFormat), arguments);
+    }
+}

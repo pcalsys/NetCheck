@@ -1,7 +1,7 @@
 <UserControl x:Class="NetCheck.App.Views.HistoryView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             AutomationProperties.Name="Diagnostic history">
+             AutomationProperties.Name="{DynamicResource HistoryAutomationName}">
     <Grid Margin="34,28,34,34">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -10,9 +10,9 @@
 
         <Grid Grid.Row="0" Margin="0,0,0,24">
             <StackPanel>
-                <TextBlock Text="YOUR REPORTS" Style="{StaticResource PageEyebrowStyle}" />
-                <TextBlock Text="A clear record of every check" Style="{StaticResource PageTitleStyle}" Margin="0,4,0,0" />
-                <TextBlock Text="Compare past diagnoses, revisit the evidence, or export a report when you need help."
+                <TextBlock Text="{DynamicResource HistoryEyebrow}" Style="{StaticResource PageEyebrowStyle}" />
+                <TextBlock Text="{DynamicResource HistoryTitle}" Style="{StaticResource PageTitleStyle}" Margin="0,4,0,0" />
+                <TextBlock Text="{DynamicResource HistorySubtitle}"
                            Style="{StaticResource MutedTextStyle}" Margin="0,5,0,0" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="18,0,0,1">
@@ -21,7 +21,7 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="13"
                                    Margin="0,0,7,0" Foreground="{StaticResource TextBrush}" />
-                        <TextBlock Text="Refresh" TextWrapping="NoWrap" />
+                        <TextBlock Text="{DynamicResource Refresh}" TextWrapping="NoWrap" />
                     </StackPanel>
                 </Button>
                 <Button Command="{Binding ClearCommand}" Style="{StaticResource SecondaryButtonStyle}"
@@ -29,7 +29,7 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="13"
                                    Margin="0,0,7,0" Foreground="{StaticResource DangerBrush}" />
-                        <TextBlock Text="Clear history" TextWrapping="NoWrap" />
+                        <TextBlock Text="{DynamicResource ClearHistory}" TextWrapping="NoWrap" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -44,9 +44,9 @@
                                Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Center"
                                VerticalAlignment="Center" TextWrapping="NoWrap" />
                 </Border>
-                <TextBlock Text="Your history is ready when you are" FontFamily="{StaticResource DisplayFont}"
+                <TextBlock Text="{DynamicResource EmptyHistoryTitle}" FontFamily="{StaticResource DisplayFont}"
                            FontSize="19" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,16,0,6" />
-                <TextBlock Text="Complete a network check and its diagnosis will appear here automatically. Reports stay on this computer."
+                <TextBlock Text="{DynamicResource EmptyHistoryText}"
                            Style="{StaticResource MutedTextStyle}" TextAlignment="Center" HorizontalAlignment="Center" />
             </StackPanel>
         </Border>
@@ -65,7 +65,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid Margin="8,6,8,13">
-                        <TextBlock Text="RECENT DIAGNOSTICS" Style="{StaticResource MetricLabelStyle}" />
+                        <TextBlock Text="{DynamicResource RecentDiagnostics}" Style="{StaticResource MetricLabelStyle}" />
                         <Border HorizontalAlignment="Right" Background="{StaticResource PrimarySoftBrush}"
                                 CornerRadius="10" Padding="8,3">
                             <TextBlock Text="{Binding Reports.Count}" Foreground="{StaticResource PrimaryBrush}"
@@ -94,7 +94,7 @@
                                         <StackPanel Grid.Column="1" Margin="11,0,8,0" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Diagnosis.Headline}" FontSize="12" FontWeight="SemiBold"
                                                        TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-                                            <TextBlock Text="{Binding CompletedAtUtc, StringFormat={}{0:MMM d, yyyy · HH:mm}}"
+                                            <TextBlock Text="{Binding CompletedAtUtc, Converter={StaticResource DateTimeTextConverter}}"
                                                        Foreground="{StaticResource MutedTextBrush}" FontSize="10"
                                                        Margin="0,3,0,0" TextWrapping="NoWrap" />
                                         </StackPanel>
@@ -134,7 +134,7 @@
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,9">
                                     <Border Background="{Binding Diagnosis.Outcome, Converter={StaticResource OutcomeToTintBrushConverter}}"
                                             CornerRadius="10" Padding="9,4">
-                                        <TextBlock Text="DIAGNOSIS" Foreground="{Binding Diagnosis.Outcome, Converter={StaticResource OutcomeToBrushConverter}}"
+                                        <TextBlock Text="{DynamicResource DiagnosisLabel}" Foreground="{Binding Diagnosis.Outcome, Converter={StaticResource OutcomeToBrushConverter}}"
                                                    FontSize="9" FontWeight="Bold" TextWrapping="NoWrap" />
                                     </Border>
                                 </StackPanel>
@@ -145,11 +145,11 @@
                             </StackPanel>
                             <Button Grid.Column="1" Command="{Binding DataContext.ExportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Top"
-                                    AutomationProperties.Name="Export selected report">
+                                    AutomationProperties.Name="{DynamicResource ExportSelectedAutomation}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xEDE1;" FontFamily="{StaticResource IconFont}" FontSize="13"
                                                Margin="0,0,7,0" Foreground="{StaticResource TextBrush}" />
-                                    <TextBlock Text="Export report" TextWrapping="NoWrap" />
+                                    <TextBlock Text="{DynamicResource ExportReport}" TextWrapping="NoWrap" />
                                 </StackPanel>
                             </Button>
                         </Grid>
@@ -162,24 +162,24 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
-                                    <TextBlock Text="IP ADDRESS" Style="{StaticResource MetricLabelStyle}" />
-                                    <TextBlock Text="{Binding Network.PrimaryIpAddress}" FontSize="13" FontWeight="SemiBold"
+                                    <TextBlock Text="{DynamicResource IpAddressMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                    <TextBlock Text="{Binding Network.PrimaryIpAddress, Converter={StaticResource LocalizedTextConverter}}" FontSize="13" FontWeight="SemiBold"
                                                Margin="0,6,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="14,0">
-                                    <TextBlock Text="GATEWAY" Style="{StaticResource MetricLabelStyle}" />
-                                    <TextBlock Text="{Binding Network.PrimaryGateway}" FontSize="13" FontWeight="SemiBold"
+                                    <TextBlock Text="{DynamicResource GatewayMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                    <TextBlock Text="{Binding Network.PrimaryGateway, Converter={StaticResource LocalizedTextConverter}}" FontSize="13" FontWeight="SemiBold"
                                                Margin="0,6,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="DURATION" Style="{StaticResource MetricLabelStyle}" />
-                                    <TextBlock Text="{Binding Duration.TotalSeconds, StringFormat={}{0:0.0} seconds}" FontSize="13"
+                                    <TextBlock Text="{DynamicResource DurationMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                    <TextBlock Text="{Binding Duration.TotalSeconds, Converter={StaticResource DurationSecondsConverter}}" FontSize="13"
                                                FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="NoWrap" />
                                 </StackPanel>
                             </Grid>
                         </Border>
 
-                        <TextBlock Text="Checks in this report" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
+                        <TextBlock Text="{DynamicResource ChecksInReport}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
                         <ItemsControl ItemsSource="{Binding Checks}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>

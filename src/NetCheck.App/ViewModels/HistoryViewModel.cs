@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using NetCheck.App.Localization;
 using NetCheck.App.Mvvm;
 using NetCheck.App.Services;
 using NetCheck.Core.Abstractions;
@@ -15,7 +16,10 @@ public sealed class HistoryViewModel : ObservableObject
     private readonly ISettingsStore _settingsStore;
     private readonly IFileDialogService _fileDialogService;
     private readonly IMessageService _messageService;
+    private readonly LocalizationService _text;
+    private readonly ReportLocalizationService _reportLocalization;
     private readonly FileLogger _logger;
+    private IReadOnlyList<DiagnosticReport> _sourceReports = Array.Empty<DiagnosticReport>();
     private DiagnosticReport? _selectedReport;
     private bool _isBusy;
 
@@ -25,6 +29,8 @@ public sealed class HistoryViewModel : ObservableObject
         ISettingsStore settingsStore,
         IFileDialogService fileDialogService,
         IMessageService messageService,
+        LocalizationService text,
+        ReportLocalizationService reportLocalization,
         FileLogger logger)
     {
         _historyStore = historyStore ?? throw new ArgumentNullException(nameof(historyStore));
@@ -32,6 +38,8 @@ public sealed class HistoryViewModel : ObservableObject
         _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
         _fileDialogService = fileDialogService ?? throw new ArgumentNullException(nameof(fileDialogService));
         _messageService = messageService ?? throw new ArgumentNullException(nameof(messageService));
+        _text = text ?? throw new ArgumentNullException(nameof(text));
+        _reportLocalization = reportLocalization ?? throw new ArgumentNullException(nameof(reportLocalization));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         RefreshCommand = new AsyncRelayCommand(LoadAsync, () => !IsBusy);
@@ -80,27 +88,36 @@ public sealed class HistoryViewModel : ObservableObject
 
     public bool HasReports => Reports.Count > 0;
 
+    public void RefreshLocalization()
+    {
+        var selectedId = SelectedReport?.Id;
+        Reports.Clear();
+        foreach (var report in _sourceReports)
+        {
+            Reports.Add(_reportLocalization.Localize(report));
+        }
+
+        SelectedReport = Reports.FirstOrDefault(report => report.Id == selectedId) ?? Reports.FirstOrDefault();
+        OnPropertyChanged(nameof(HasReports));
+        ClearCommand.RaiseCanExecuteChanged();
+    }
+
     public async Task LoadAsync()
     {
         IsBusy = true;
         try
         {
             var selectedId = SelectedReport?.Id;
-            var reports = await _historyStore.GetRecentAsync(50).ConfigureAwait(true);
-            Reports.Clear();
-            foreach (var report in reports)
-            {
-                Reports.Add(report);
-            }
-
+            _sourceReports = await _historyStore.GetRecentAsync(50).ConfigureAwait(true);
+            RefreshLocalization();
             SelectedReport = Reports.FirstOrDefault(report => report.Id == selectedId) ?? Reports.FirstOrDefault();
-            OnPropertyChanged(nameof(HasReports));
-            ClearCommand.RaiseCanExecuteChanged();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             _logger.Error("Could not load report history.", exception);
-            _messageService.ShowError("History unavailable", "NetCheck could not load the saved diagnostic history.");
+            _messageService.ShowError(
+                _text.Translate("History unavailable"),
+                _text.Translate("NetCheck could not load the saved diagnostic history."));
         }
         finally
         {
@@ -127,20 +144,23 @@ public sealed class HistoryViewModel : ObservableObject
             SelectedReport,
             path,
             settings.IncludeComputerNameInExports).ConfigureAwait(true);
-        _messageService.ShowInformation("Report exported", $"The diagnostic report was saved to:\n{path}");
+        _messageService.ShowInformation(
+            _text.Translate("Report exported"),
+            _text.Format("The diagnostic report was saved to:\n{0}", path));
     }
 
     private async Task ClearAsync()
     {
         if (!_messageService.Confirm(
-                "Clear diagnostic history?",
-                "This permanently removes the diagnostic reports saved by NetCheck on this computer."))
+                _text.Translate("Clear diagnostic history?"),
+                _text.Translate("This permanently removes the diagnostic reports saved by NetCheck on this computer.")))
         {
             return;
         }
 
         await _historyStore.ClearAsync().ConfigureAwait(true);
         Reports.Clear();
+        _sourceReports = Array.Empty<DiagnosticReport>();
         SelectedReport = null;
         OnPropertyChanged(nameof(HasReports));
         ClearCommand.RaiseCanExecuteChanged();
@@ -149,6 +169,6 @@ public sealed class HistoryViewModel : ObservableObject
     private void OnCommandFailed(object? sender, Exception exception)
     {
         _logger.Error("History operation failed.", exception);
-        _messageService.ShowError("Operation failed", exception.Message);
+        _messageService.ShowError(_text.Translate("Operation failed"), exception.Message);
     }
 }

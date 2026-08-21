@@ -26,11 +26,13 @@ NetCheck.Core ◄── NetCheck.Infrastructure
 
 `NetCheck.Core` has no Windows desktop dependency. It owns the diagnostic vocabulary, orchestration contract, ordered execution engine, and root-cause analysis. `NetCheck.Infrastructure` implements the operating-system and I/O boundaries. `NetCheck.App` is the composition root and owns WPF-specific behavior such as dialogs, commands, and visual state.
 
-## Presentation and menu language
+## Presentation and localization
 
 The WPF shell uses MVVM navigation and a shared resource dictionary for the visual system. Dashboard, history, and settings views contain only presentation bindings; diagnostic behavior remains in Core and Infrastructure.
 
-English is the default and remains the language for diagnoses, settings, reports, and technical evidence. The navigation menu can be switched independently between English and German. Its normalized `en` or `de` preference is stored with the local application settings so it survives restarts without changing the process culture or diagnostic output.
+Matched English and German resource dictionaries provide the complete static interface. Diagnostic reports remain language-neutral in storage, while an application-layer projection localizes diagnoses, technical evidence, repair plans, history, dialogs, and exports. This allows an existing report to be re-rendered immediately after a language switch without coupling diagnostic or repair rules to presentation language.
+
+The normalized `en` or `de` preference is stored with the local application settings so it survives restarts. The selected culture also controls visible dates, numbers, status labels, and exported report headings.
 
 ## Diagnostic execution
 

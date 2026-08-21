@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
 using System.Windows;
+using NetCheck.App.Localization;
 using NetCheck.App.Mvvm;
 using NetCheck.App.Services;
 using NetCheck.Core.Abstractions;
@@ -20,12 +21,16 @@ public sealed class DashboardViewModel : ObservableObject
     private readonly INetworkRepairService _repairService;
     private readonly IFileDialogService _fileDialogService;
     private readonly IMessageService _messageService;
+    private readonly LocalizationService _text;
+    private readonly ReportLocalizationService _reportLocalization;
     private readonly FileLogger _logger;
     private CancellationTokenSource? _runCancellation;
     private DiagnosticReport? _report;
+    private DiagnosticReport? _sourceReport;
     private DiagnosticOptions _settings = new();
     private NetworkRepairPlan _repairPlan = NetworkRepairPlan.Empty;
     private NetworkRepairResult? _repairResult;
+    private NetworkRepairResult? _sourceRepairResult;
     private bool _isRunning;
     private bool _isRepairing;
     private bool _isInitialized;
@@ -42,6 +47,8 @@ public sealed class DashboardViewModel : ObservableObject
         INetworkRepairService repairService,
         IFileDialogService fileDialogService,
         IMessageService messageService,
+        LocalizationService text,
+        ReportLocalizationService reportLocalization,
         FileLogger logger)
     {
         _diagnosticEngine = diagnosticEngine ?? throw new ArgumentNullException(nameof(diagnosticEngine));
@@ -52,6 +59,8 @@ public sealed class DashboardViewModel : ObservableObject
         _repairService = repairService ?? throw new ArgumentNullException(nameof(repairService));
         _fileDialogService = fileDialogService ?? throw new ArgumentNullException(nameof(fileDialogService));
         _messageService = messageService ?? throw new ArgumentNullException(nameof(messageService));
+        _text = text ?? throw new ArgumentNullException(nameof(text));
+        _reportLocalization = reportLocalization ?? throw new ArgumentNullException(nameof(reportLocalization));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         RunCommand = new AsyncRelayCommand(RunAsync, () => !IsRunning && !IsRepairing);
@@ -86,9 +95,6 @@ public sealed class DashboardViewModel : ObservableObject
                 return;
             }
 
-            RepairPlan = value is null
-                ? NetworkRepairPlan.Empty
-                : _repairPlanner.CreatePlan(value);
             if (!_preserveRepairResultDuringVerification)
             {
                 RepairResult = null;
@@ -213,69 +219,117 @@ public sealed class DashboardViewModel : ObservableObject
     public bool HasRepairResult => RepairResult is not null;
 
     public string FixButtonText => IsRepairing
-        ? "Fixing issues…"
+        ? _text.Translate("Fixing issues…")
         : !RepairPlan.CanExecute
-            ? "Fix unavailable"
+            ? _text.Translate("Fix unavailable")
         : RepairPlan.Actions.Count == 1
-            ? "Fix issue"
-            : $"Fix {RepairPlan.Actions.Count} issues";
+            ? _text.Translate("Fix issue")
+            : _text.Format("Fix {0} issues", RepairPlan.Actions.Count);
 
     public string FixButtonToolTip => RepairPlan.CanExecute
-        ? "Review and apply the repair plan for the detected issues."
-        : "This issue needs a manual, physical, router, or provider fix; no safe Windows repair matches the evidence.";
+        ? _text.Translate("Review and apply the repair plan for the detected issues.")
+        : _text.Translate("This issue needs a manual, physical, router, or provider fix; no safe Windows repair matches the evidence.");
 
     public string RepairResultTitle => RepairResult switch
     {
         null => string.Empty,
-        { Cancelled: true } => "Repair cancelled",
-        { Succeeded: true } => "Approved repairs were applied",
-        { HasAppliedChanges: true } => "Some repairs were applied",
-        _ => "Repairs could not be applied"
+        { Cancelled: true } => _text.Translate("Repair cancelled"),
+        { Succeeded: true } => _text.Translate("Approved repairs were applied"),
+        { HasAppliedChanges: true } => _text.Translate("Some repairs were applied"),
+        _ => _text.Translate("Repairs could not be applied")
     };
 
     public string RepairResultSummary => RepairResult switch
     {
         null => string.Empty,
-        { Cancelled: true } => "No changes were made because administrator approval was cancelled.",
+        { Cancelled: true } => _text.Translate("No changes were made because administrator approval was cancelled."),
         { Succeeded: true, RequiresRestart: true } =>
-            "Restart Windows to finish the network-stack repair, then run NetCheck again.",
+            _text.Translate("Restart Windows to finish the network-stack repair, then run NetCheck again."),
         { Succeeded: true } =>
-            "NetCheck applied the repair plan and checked the connection again.",
+            _text.Translate("NetCheck applied the repair plan and checked the connection again."),
         { HasAppliedChanges: true, RequiresRestart: true } =>
-            "Windows applied part of the plan. Restart the computer before checking again.",
+            _text.Translate("Windows applied part of the plan. Restart the computer before checking again."),
         { HasAppliedChanges: true } =>
-            "Windows applied part of the plan and NetCheck checked the connection again.",
-        _ => "Review the failed steps below and use the recommended manual next steps."
+            _text.Translate("Windows applied part of the plan and NetCheck checked the connection again."),
+        _ => _text.Translate("Review the failed steps below and use the recommended manual next steps.")
     };
 
     public DiagnosticOutcome StatusOutcome => Report?.Diagnosis.Outcome ?? DiagnosticOutcome.Unknown;
 
     public string StatusTitle => IsRepairing
-        ? "Applying approved repairs"
+        ? _text.Translate("Applying approved repairs")
         : IsRunning
-            ? "Checking your connection"
-            : Report?.Diagnosis.Headline ?? "Ready to diagnose your network";
+            ? _text.Translate("Checking your connection")
+            : Report?.Diagnosis.Headline ?? _text.Translate("Ready to diagnose your network");
 
     public string StatusSummary => IsRepairing
-        ? "Windows may ask for administrator approval. NetCheck will only run the repairs shown in the confirmation."
+        ? _text.Translate("Windows may ask for administrator approval. NetCheck will only run the repairs shown in the confirmation.")
         : IsRunning
             ? string.IsNullOrWhiteSpace(CurrentCheckName)
-                ? "Preparing network checks…"
-                : $"Running {CurrentCheckName.ToLowerInvariant()}…"
+                ? _text.Translate("Preparing network checks…")
+                : _text.Format("Running {0}…", CurrentCheckName.ToLower(_text.Culture))
             : Report?.Diagnosis.Summary
-              ?? "NetCheck will test the adapter, local network, DNS, internet access, and connection quality.";
+              ?? _text.Translate("NetCheck will test the adapter, local network, DNS, internet access, and connection quality.");
 
-    public string PrimaryAdapterName => Report?.Network.PrimaryAdapter?.Name ?? "Not available";
+    public string PrimaryAdapterName => Report?.Network.PrimaryAdapter?.Name ?? _text.Translate("Not available");
 
-    public string PrimaryIpAddress => Report?.Network.PrimaryIpAddress ?? "Not available";
+    public string PrimaryIpAddress => Report is null
+        ? _text.Translate("Not available")
+        : _text.Translate(Report.Network.PrimaryIpAddress);
 
-    public string PrimaryGateway => Report?.Network.PrimaryGateway ?? "Not available";
+    public string PrimaryGateway => Report is null
+        ? _text.Translate("Not available")
+        : _text.Translate(Report.Network.PrimaryGateway);
 
-    public string PrimaryDnsServer => Report?.Network.PrimaryDnsServer ?? "Not available";
+    public string PrimaryDnsServer => Report is null
+        ? _text.Translate("Not available")
+        : _text.Translate(Report.Network.PrimaryDnsServer);
 
     public string CompletedText => Report is null
         ? string.Empty
-        : $"Completed {Report.CompletedAtUtc.ToLocalTime():MMM d, yyyy 'at' HH:mm} in {Report.Duration.TotalSeconds:0.0} seconds";
+        : _text.Format(
+            "Completed {0} in {1:0.0} seconds",
+            Report.CompletedAtUtc.ToLocalTime().ToString("g", _text.Culture),
+            Report.Duration.TotalSeconds);
+
+    public void RefreshLocalization()
+    {
+        var previousPreserveState = _preserveRepairResultDuringVerification;
+        _preserveRepairResultDuringVerification = true;
+        try
+        {
+            SetReport(_sourceReport);
+        }
+        finally
+        {
+            _preserveRepairResultDuringVerification = previousPreserveState;
+        }
+
+        RepairResult = _sourceRepairResult is null
+            ? null
+            : _reportLocalization.Localize(_sourceRepairResult);
+        Results.Clear();
+        if (_sourceReport is not null)
+        {
+            foreach (var result in _sourceReport.Checks)
+            {
+                Results.Add(_reportLocalization.Localize(result));
+            }
+        }
+
+        OnPropertiesChanged(
+            nameof(StatusTitle),
+            nameof(StatusSummary),
+            nameof(FixButtonText),
+            nameof(FixButtonToolTip),
+            nameof(RepairResultTitle),
+            nameof(RepairResultSummary),
+            nameof(PrimaryAdapterName),
+            nameof(PrimaryIpAddress),
+            nameof(PrimaryGateway),
+            nameof(PrimaryDnsServer),
+            nameof(CompletedText));
+    }
 
     public async Task InitializeAsync()
     {
@@ -305,7 +359,7 @@ public sealed class DashboardViewModel : ObservableObject
         IsRunning = true;
         ProgressPercentage = 0;
         CurrentCheckName = string.Empty;
-        Report = null;
+        SetReport(null);
         Results.Clear();
 
         try
@@ -316,7 +370,7 @@ public sealed class DashboardViewModel : ObservableObject
                 .RunAsync(_settings, progress, cancellationToken)
                 .ConfigureAwait(true);
 
-            Report = report;
+            SetReport(report);
             ProgressPercentage = report.Diagnosis.Outcome == DiagnosticOutcome.Cancelled ? ProgressPercentage : 100;
             if (_settings.SaveDiagnosticHistory
                 && report.Diagnosis.Outcome != DiagnosticOutcome.Cancelled)
@@ -333,7 +387,7 @@ public sealed class DashboardViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            Report = new DiagnosticReport
+            SetReport(new DiagnosticReport
             {
                 StartedAtUtc = DateTimeOffset.UtcNow,
                 CompletedAtUtc = DateTimeOffset.UtcNow,
@@ -346,14 +400,14 @@ public sealed class DashboardViewModel : ObservableObject
                     Summary = "The diagnostic was stopped before every check completed.",
                     RecommendedActions = ["Run a new diagnostic when you are ready."]
                 }
-            };
+            });
         }
         catch (Exception exception)
         {
             _logger.Error("Diagnostic run failed.", exception);
             _messageService.ShowError(
-                "NetCheck could not finish",
-                "An unexpected error interrupted the diagnostic. No system settings were changed. Please try again.");
+                _text.Translate("NetCheck could not finish"),
+                _text.Translate("An unexpected error interrupted the diagnostic. No system settings were changed. Please try again."));
         }
         finally
         {
@@ -368,7 +422,7 @@ public sealed class DashboardViewModel : ObservableObject
         CurrentCheckName = progress.CurrentCheckName;
         if (progress.Result is not null)
         {
-            Results.Add(progress.Result);
+            Results.Add(_reportLocalization.Localize(progress.Result));
         }
     }
 
@@ -383,7 +437,7 @@ public sealed class DashboardViewModel : ObservableObject
         }
 
         var message = new StringBuilder();
-        message.AppendLine("NetCheck can try these repairs:");
+        message.AppendLine(_text.Translate("NetCheck can try these repairs:"));
         message.AppendLine();
         foreach (var action in plan.Actions)
         {
@@ -394,17 +448,17 @@ public sealed class DashboardViewModel : ObservableObject
         if (plan.RequiresElevation)
         {
             message.AppendLine();
-            message.AppendLine("Windows will ask for administrator approval.");
+            message.AppendLine(_text.Translate("Windows will ask for administrator approval."));
         }
 
         if (plan.RequiresRestart)
         {
-            message.AppendLine("One or more repairs require a Windows restart.");
+            message.AppendLine(_text.Translate("One or more repairs require a Windows restart."));
         }
 
         message.AppendLine();
-        message.Append("Only the listed changes will be made. Continue?");
-        if (!_messageService.Confirm("Fix detected network issues?", message.ToString()))
+        message.Append(_text.Translate("Only the listed changes will be made. Continue?"));
+        if (!_messageService.Confirm(_text.Translate("Fix detected network issues?"), message.ToString()))
         {
             return;
         }
@@ -414,7 +468,7 @@ public sealed class DashboardViewModel : ObservableObject
         try
         {
             result = await _repairService.ExecuteAsync(plan).ConfigureAwait(true);
-            RepairResult = result;
+            SetRepairResult(result);
         }
         finally
         {
@@ -455,12 +509,14 @@ public sealed class DashboardViewModel : ObservableObject
                 Report,
                 path,
                 _settings.IncludeComputerNameInExports).ConfigureAwait(true);
-            _messageService.ShowInformation("Report exported", $"The diagnostic report was saved to:\n{path}");
+            _messageService.ShowInformation(
+                _text.Translate("Report exported"),
+                _text.Format("The diagnostic report was saved to:\n{0}", path));
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or NotSupportedException)
         {
             _logger.Error("Report export failed.", exception);
-            _messageService.ShowError("Export failed", exception.Message);
+            _messageService.ShowError(_text.Translate("Export failed"), exception.Message);
         }
     }
 
@@ -474,8 +530,8 @@ public sealed class DashboardViewModel : ObservableObject
         var builder = new StringBuilder();
         builder.AppendLine($"NetCheck: {Report.Diagnosis.Headline}");
         builder.AppendLine(Report.Diagnosis.Summary);
-        builder.AppendLine($"Adapter: {PrimaryAdapterName}");
-        builder.AppendLine($"IP: {PrimaryIpAddress} | Gateway: {PrimaryGateway} | DNS: {PrimaryDnsServer}");
+        builder.AppendLine($"{_text.Translate("Adapter")}: {PrimaryAdapterName}");
+        builder.AppendLine($"IP: {PrimaryIpAddress} | {_text.Translate("Gateway")}: {PrimaryGateway} | DNS: {PrimaryDnsServer}");
         foreach (var result in Report.Checks.Where(result => result.Status is CheckStatus.Warning or CheckStatus.Failed))
         {
             builder.AppendLine($"{result.Title}: {result.Summary}");
@@ -488,7 +544,9 @@ public sealed class DashboardViewModel : ObservableObject
         catch (Exception exception)
         {
             _logger.Error("Could not copy report summary.", exception);
-            _messageService.ShowError("Copy failed", "Windows could not access the clipboard. Please try again.");
+            _messageService.ShowError(
+                _text.Translate("Copy failed"),
+                _text.Translate("Windows could not access the clipboard. Please try again."));
         }
     }
 
@@ -496,6 +554,28 @@ public sealed class DashboardViewModel : ObservableObject
         command.ExecutionFailed += (_, exception) =>
         {
             _logger.Error($"Unexpected error while {operation}.", exception);
-            _messageService.ShowError("Unexpected error", "NetCheck handled an unexpected error. Please try again.");
+            _messageService.ShowError(
+                _text.Translate("Unexpected error"),
+                _text.Translate("NetCheck handled an unexpected error. Please try again."));
         };
+
+    private void SetReport(DiagnosticReport? source)
+    {
+        _sourceReport = source;
+        if (!_preserveRepairResultDuringVerification)
+        {
+            _sourceRepairResult = null;
+        }
+
+        RepairPlan = source is null
+            ? NetworkRepairPlan.Empty
+            : _reportLocalization.Localize(_repairPlanner.CreatePlan(source));
+        Report = source is null ? null : _reportLocalization.Localize(source);
+    }
+
+    private void SetRepairResult(NetworkRepairResult result)
+    {
+        _sourceRepairResult = result;
+        RepairResult = _reportLocalization.Localize(result);
+    }
 }

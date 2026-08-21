@@ -1,4 +1,5 @@
 using NetCheck.App.Mvvm;
+using NetCheck.App.Localization;
 using NetCheck.Core.Abstractions;
 using NetCheck.Infrastructure.Logging;
 
@@ -10,6 +11,7 @@ public sealed class MainViewModel : ObservableObject
     private readonly HistoryViewModel _history;
     private readonly SettingsViewModel _settings;
     private readonly ISettingsStore _settingsStore;
+    private readonly LocalizationService _text;
     private readonly FileLogger _logger;
     private ObservableObject _currentPage;
     private MainPage _selectedPage = MainPage.Dashboard;
@@ -20,12 +22,14 @@ public sealed class MainViewModel : ObservableObject
         HistoryViewModel history,
         SettingsViewModel settings,
         ISettingsStore settingsStore,
+        LocalizationService text,
         FileLogger logger)
     {
         _dashboard = dashboard ?? throw new ArgumentNullException(nameof(dashboard));
         _history = history ?? throw new ArgumentNullException(nameof(history));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
+        _text = text ?? throw new ArgumentNullException(nameof(text));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _currentPage = dashboard;
 
@@ -54,20 +58,22 @@ public sealed class MainViewModel : ObservableObject
 
     public string CurrentPageName => _selectedPage switch
     {
-        MainPage.History => IsGermanMenu ? "Verlauf" : "History",
-        MainPage.Settings => IsGermanMenu ? "Einstellungen" : "Settings",
-        _ => IsGermanMenu ? "Übersicht" : "Dashboard"
+        MainPage.History => _text.Translate("History"),
+        MainPage.Settings => _text.Translate("Settings"),
+        _ => _text.Translate("Dashboard")
     };
 
-    public string DashboardMenuLabel => IsGermanMenu ? "Übersicht" : "Dashboard";
+    public string DashboardMenuLabel => _text.Translate("Dashboard");
 
-    public string HistoryMenuLabel => IsGermanMenu ? "Verlauf" : "History";
+    public string HistoryMenuLabel => _text.Translate("History");
 
-    public string SettingsMenuLabel => IsGermanMenu ? "Einstellungen" : "Settings";
+    public string SettingsMenuLabel => _text.Translate("Settings");
 
-    public string MenuLanguageLabel => IsGermanMenu ? "Menüsprache" : "Menu language";
+    public string MenuLanguageLabel => _text.Translate("LANGUAGE");
 
-    public string NavigationLabel => IsGermanMenu ? "NAVIGATION" : "NAVIGATION";
+    public string NavigationLabel => _text.Translate("NAVIGATION");
+
+    public string CurrentLanguageTag => _text.Culture.IetfLanguageTag;
 
     public bool IsDashboardSelected => _selectedPage == MainPage.Dashboard;
 
@@ -131,6 +137,10 @@ public sealed class MainViewModel : ObservableObject
     private void ApplyMenuLanguage(string language)
     {
         _menuLanguage = string.Equals(language, "de", StringComparison.OrdinalIgnoreCase) ? "de" : "en";
+        _text.SetLanguage(_menuLanguage);
+        _dashboard.RefreshLocalization();
+        _history.RefreshLocalization();
+        _settings.RefreshLocalization();
         OnPropertiesChanged(
             nameof(CurrentPageName),
             nameof(DashboardMenuLabel),
@@ -138,6 +148,7 @@ public sealed class MainViewModel : ObservableObject
             nameof(SettingsMenuLabel),
             nameof(MenuLanguageLabel),
             nameof(NavigationLabel),
+            nameof(CurrentLanguageTag),
             nameof(IsEnglishMenu),
             nameof(IsGermanMenu));
     }

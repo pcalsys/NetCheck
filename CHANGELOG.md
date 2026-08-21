@@ -2,6 +2,22 @@
 
 All notable changes to NetCheck are documented here.
 
+## 1.3.0 — 2026-08-21
+
+### Added
+
+- Complete English and German localization for pages, live diagnostic results, history, dialogs, repair copy, and report exports
+- Experienced-users-only warning above the advanced settings
+- Localization parity and presentation-projection tests
+
+### Changed
+
+- Replaced the lower-left safety card with `created by pcalsys`
+- Made both language choices white for stronger contrast on the dark-blue sidebar
+- Removed the upper-left logo, `NetCheck` wordmark, and `Network Clarity` tagline
+- Removed the upper-right `Private & local` badge
+- Kept persisted diagnostics language-neutral so switching languages can re-render existing reports
+
 ## 1.2.0 — 2026-08-21
 
 ### Added

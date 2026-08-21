@@ -1,17 +1,37 @@
 <UserControl x:Class="NetCheck.App.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             AutomationProperties.Name="NetCheck settings">
+             AutomationProperties.Name="{DynamicResource SettingsAutomationName}">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="34,28,34,42" MaxWidth="930" HorizontalAlignment="Center">
             <Grid Margin="0,0,0,24">
                 <StackPanel>
-                    <TextBlock Text="MAKE IT YOURS" Style="{StaticResource PageEyebrowStyle}" />
-                    <TextBlock Text="Tune NetCheck to your network" Style="{StaticResource PageTitleStyle}" Margin="0,4,0,0" />
-                    <TextBlock Text="Adjust what gets tested and when NetCheck should flag connection quality for your attention."
+                    <TextBlock Text="{DynamicResource SettingsEyebrow}" Style="{StaticResource PageEyebrowStyle}" />
+                    <TextBlock Text="{DynamicResource SettingsTitle}" Style="{StaticResource PageTitleStyle}" Margin="0,4,0,0" />
+                    <TextBlock Text="{DynamicResource SettingsSubtitle}"
                                Style="{StaticResource MutedTextStyle}" Margin="0,5,0,0" />
                 </StackPanel>
             </Grid>
+
+            <Border Background="#FFF7E8" BorderBrush="#E8C56E" BorderThickness="1"
+                    CornerRadius="12" Padding="16" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="34" Height="34" CornerRadius="10" Background="#F8E6B9" VerticalAlignment="Top">
+                        <TextBlock Text="&#xE7BA;" FontFamily="{StaticResource IconFont}" Foreground="#8A5B00"
+                                   FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                        <TextBlock Text="{DynamicResource ExpertWarningTitle}" Foreground="#704B00"
+                                   FontSize="13" FontWeight="SemiBold" />
+                        <TextBlock Text="{DynamicResource ExpertWarningText}" Foreground="#7D632A"
+                                   FontSize="11" LineHeight="17" Margin="0,3,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+            </Border>
 
             <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16" Padding="0">
                 <Grid>
@@ -26,28 +46,28 @@
                                 <TextBlock Text="&#xE774;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource PrimaryBrush}"
                                            FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
-                            <TextBlock Text="Diagnostic targets" FontSize="16" FontWeight="SemiBold" Margin="0,14,0,5" />
-                            <TextBlock Text="The trusted destinations NetCheck uses to confirm each layer of connectivity."
+                            <TextBlock Text="{DynamicResource DiagnosticTargets}" FontSize="16" FontWeight="SemiBold" Margin="0,14,0,5" />
+                            <TextBlock Text="{DynamicResource DiagnosticTargetsText}"
                                        Style="{StaticResource MutedTextStyle}" FontSize="11" />
                         </StackPanel>
                     </Border>
                     <StackPanel Grid.Column="1" Margin="24,22">
-                        <TextBlock Text="DNS test hostname" Style="{StaticResource FieldLabelStyle}" />
+                        <TextBlock Text="{DynamicResource DnsTestHostname}" Style="{StaticResource FieldLabelStyle}" />
                         <TextBox Text="{Binding DnsTestHost, UpdateSourceTrigger=PropertyChanged}"
-                                 AutomationProperties.Name="DNS test hostname" />
-                        <TextBlock Text="A stable public hostname used only to confirm name resolution."
+                                 AutomationProperties.Name="{DynamicResource DnsTestHostname}" />
+                        <TextBlock Text="{DynamicResource DnsTestHostnameHelp}"
                                    Style="{StaticResource MutedTextStyle}" FontSize="11" Margin="0,4,0,16" />
 
-                        <TextBlock Text="Internet ping targets" Style="{StaticResource FieldLabelStyle}" />
+                        <TextBlock Text="{DynamicResource InternetPingTargets}" Style="{StaticResource FieldLabelStyle}" />
                         <TextBox Text="{Binding PingTargets, UpdateSourceTrigger=PropertyChanged}"
-                                 AutomationProperties.Name="Internet ping targets" />
-                        <TextBlock Text="Use one or more IP addresses separated by commas. Testing stops after the first response."
+                                 AutomationProperties.Name="{DynamicResource InternetPingTargets}" />
+                        <TextBlock Text="{DynamicResource InternetPingTargetsHelp}"
                                    Style="{StaticResource MutedTextStyle}" FontSize="11" Margin="0,4,0,16" />
 
-                        <TextBlock Text="Web connectivity URL" Style="{StaticResource FieldLabelStyle}" />
+                        <TextBlock Text="{DynamicResource WebConnectivityUrl}" Style="{StaticResource FieldLabelStyle}" />
                         <TextBox Text="{Binding ConnectivityUrl, UpdateSourceTrigger=PropertyChanged}"
-                                 AutomationProperties.Name="Web connectivity URL" />
-                        <TextBlock Text="A lightweight endpoint that confirms web access and helps identify sign-in portals."
+                                 AutomationProperties.Name="{DynamicResource WebConnectivityUrl}" />
+                        <TextBlock Text="{DynamicResource WebConnectivityUrlHelp}"
                                    Style="{StaticResource MutedTextStyle}" FontSize="11" Margin="0,4,0,0" />
                     </StackPanel>
                 </Grid>
@@ -66,8 +86,8 @@
                                 <TextBlock Text="&#xE9D9;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource WarningBrush}"
                                            FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
-                            <TextBlock Text="Quality thresholds" FontSize="16" FontWeight="SemiBold" Margin="0,14,0,5" />
-                            <TextBlock Text="Choose when latency or packet loss should be called out as unstable."
+                            <TextBlock Text="{DynamicResource QualityThresholds}" FontSize="16" FontWeight="SemiBold" Margin="0,14,0,5" />
+                            <TextBlock Text="{DynamicResource QualityThresholdsText}"
                                        Style="{StaticResource MutedTextStyle}" FontSize="11" />
                         </StackPanel>
                     </Border>
@@ -84,40 +104,40 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Grid.Column="0">
-                            <TextBlock Text="Ping timeout" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Text="{DynamicResource PingTimeout}" Style="{StaticResource FieldLabelStyle}" />
                             <Grid>
                                 <TextBox Text="{Binding PingTimeoutMilliseconds, UpdateSourceTrigger=PropertyChanged}"
-                                         Padding="11,9,50,9" AutomationProperties.Name="Ping timeout in milliseconds" />
+                                         Padding="11,9,50,9" AutomationProperties.Name="{DynamicResource PingTimeoutAutomation}" />
                                 <TextBlock Text="ms" Foreground="{StaticResource MutedTextBrush}" FontSize="11"
                                            HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" />
                             </Grid>
-                            <TextBlock Text="500–5000 milliseconds" Style="{StaticResource MutedTextStyle}" FontSize="10" Margin="0,4,0,0" />
+                            <TextBlock Text="{DynamicResource PingTimeoutRange}" Style="{StaticResource MutedTextStyle}" FontSize="10" Margin="0,4,0,0" />
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="2">
-                            <TextBlock Text="Stability samples" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Text="{DynamicResource StabilitySamples}" Style="{StaticResource FieldLabelStyle}" />
                             <TextBox Text="{Binding StabilitySampleCount, UpdateSourceTrigger=PropertyChanged}"
-                                     AutomationProperties.Name="Number of stability samples" />
-                            <TextBlock Text="3–20 requests" Style="{StaticResource MutedTextStyle}" FontSize="10" Margin="0,4,0,0" />
+                                     AutomationProperties.Name="{DynamicResource StabilitySamplesAutomation}" />
+                            <TextBlock Text="{DynamicResource StabilitySamplesRange}" Style="{StaticResource MutedTextStyle}" FontSize="10" Margin="0,4,0,0" />
                         </StackPanel>
                         <StackPanel Grid.Row="2" Grid.Column="0">
-                            <TextBlock Text="Packet-loss warning" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Text="{DynamicResource PacketLossWarning}" Style="{StaticResource FieldLabelStyle}" />
                             <Grid>
                                 <TextBox Text="{Binding PacketLossWarningPercent, UpdateSourceTrigger=PropertyChanged}"
-                                         Padding="11,9,44,9" AutomationProperties.Name="Packet loss warning percentage" />
+                                         Padding="11,9,44,9" AutomationProperties.Name="{DynamicResource PacketLossAutomation}" />
                                 <TextBlock Text="%" Foreground="{StaticResource MutedTextBrush}" FontSize="11"
                                            HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" />
                             </Grid>
-                            <TextBlock Text="1–100 percent" Style="{StaticResource MutedTextStyle}" FontSize="10" Margin="0,4,0,0" />
+                            <TextBlock Text="{DynamicResource PacketLossRange}" Style="{StaticResource MutedTextStyle}" FontSize="10" Margin="0,4,0,0" />
                         </StackPanel>
                         <StackPanel Grid.Row="2" Grid.Column="2">
-                            <TextBlock Text="Latency warning" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Text="{DynamicResource LatencyWarning}" Style="{StaticResource FieldLabelStyle}" />
                             <Grid>
                                 <TextBox Text="{Binding LatencyWarningMilliseconds, UpdateSourceTrigger=PropertyChanged}"
-                                         Padding="11,9,50,9" AutomationProperties.Name="Latency warning in milliseconds" />
+                                         Padding="11,9,50,9" AutomationProperties.Name="{DynamicResource LatencyAutomation}" />
                                 <TextBlock Text="ms" Foreground="{StaticResource MutedTextBrush}" FontSize="11"
                                            HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" />
                             </Grid>
-                            <TextBlock Text="10–2000 milliseconds" Style="{StaticResource MutedTextStyle}" FontSize="10" Margin="0,4,0,0" />
+                            <TextBlock Text="{DynamicResource LatencyRange}" Style="{StaticResource MutedTextStyle}" FontSize="10" Margin="0,4,0,0" />
                         </StackPanel>
                     </Grid>
                 </Grid>
@@ -136,17 +156,17 @@
                                 <TextBlock Text="&#xE72E;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource SuccessBrush}"
                                            FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
-                            <TextBlock Text="Behavior &amp; privacy" FontSize="16" FontWeight="SemiBold" Margin="0,14,0,5" />
-                            <TextBlock Text="Decide what is automatic, what is saved, and what an export may include."
+                            <TextBlock Text="{DynamicResource BehaviorPrivacy}" FontSize="16" FontWeight="SemiBold" Margin="0,14,0,5" />
+                            <TextBlock Text="{DynamicResource BehaviorPrivacyText}"
                                        Style="{StaticResource MutedTextStyle}" FontSize="11" />
                         </StackPanel>
                     </Border>
                     <StackPanel Grid.Column="1" Margin="24,22">
-                        <CheckBox Content="Run a diagnostic automatically when NetCheck starts"
+                        <CheckBox Content="{DynamicResource AutoRunOnLaunch}"
                                   IsChecked="{Binding AutoRunOnLaunch}" />
-                        <CheckBox Content="Save completed diagnostics in local history"
+                        <CheckBox Content="{DynamicResource SaveHistory}"
                                   IsChecked="{Binding SaveDiagnosticHistory}" />
-                        <CheckBox Content="Include the computer name in exported reports"
+                        <CheckBox Content="{DynamicResource IncludeComputerName}"
                                   IsChecked="{Binding IncludeComputerNameInExports}" />
 
                         <Border Background="#F0F8F5" BorderBrush="#D7ECE5" BorderThickness="1" CornerRadius="10"
@@ -159,7 +179,7 @@
                                 <TextBlock Text="&#xE72E;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource SuccessBrush}"
                                            FontSize="13" Margin="0,1,9,0" />
                                 <TextBlock Grid.Column="1"
-                                           Text="Computer names are excluded from exports by default. Reports and settings stay in your local application data folder."
+                                           Text="{DynamicResource PrivacyNote}"
                                            Foreground="#4B7165" FontSize="11" LineHeight="17" />
                             </Grid>
                         </Border>
@@ -171,13 +191,13 @@
                         </Border>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Restore defaults" Command="{Binding ResetCommand}"
+                            <Button Content="{DynamicResource RestoreDefaults}" Command="{Binding ResetCommand}"
                                     Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" />
                             <Button Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButtonStyle}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE74E;" FontFamily="{StaticResource IconFont}" Foreground="White"
                                                FontSize="13" Margin="0,0,7,0" />
-                                    <TextBlock Text="Save settings" Foreground="White" TextWrapping="NoWrap" />
+                                    <TextBlock Text="{DynamicResource SaveSettings}" Foreground="White" TextWrapping="NoWrap" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>

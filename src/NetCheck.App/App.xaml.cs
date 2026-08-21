@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Threading;
+using NetCheck.App.Localization;
 using NetCheck.App.Services;
 using NetCheck.App.ViewModels;
 using NetCheck.Core.Abstractions;
@@ -36,6 +37,10 @@ public partial class App : Application
         _logger = new FileLogger(paths.LogFile);
         _historyStore = new JsonReportHistoryStore(paths);
         _settingsStore = new JsonSettingsStore(paths);
+        var localization = new LocalizationService();
+        var initialSettings = await _settingsStore.LoadAsync().ConfigureAwait(true);
+        localization.SetLanguage(initialSettings.MenuLanguage);
+        var reportLocalization = new ReportLocalizationService(localization);
 
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
@@ -57,10 +62,10 @@ public partial class App : Application
             checks,
             new WindowsNetworkSnapshotProvider(),
             new DiagnosisAnalyzer());
-        var exporter = new ReportExporter();
+        var exporter = new ReportExporter(localization);
         var repairPlanner = new NetworkRepairPlanner();
         var repairService = new WindowsNetworkRepairService();
-        var dialogService = new FileDialogService();
+        var dialogService = new FileDialogService(localization);
         var messageService = new MessageService();
 
         var dashboard = new DashboardViewModel(
@@ -72,6 +77,8 @@ public partial class App : Application
             repairService,
             dialogService,
             messageService,
+            localization,
+            reportLocalization,
             _logger);
         var history = new HistoryViewModel(
             _historyStore,
@@ -79,9 +86,17 @@ public partial class App : Application
             _settingsStore,
             dialogService,
             messageService,
+            localization,
+            reportLocalization,
             _logger);
-        var settings = new SettingsViewModel(_settingsStore, messageService, _logger);
-        var mainViewModel = new MainViewModel(dashboard, history, settings, _settingsStore, _logger);
+        var settings = new SettingsViewModel(_settingsStore, messageService, localization, _logger);
+        var mainViewModel = new MainViewModel(
+            dashboard,
+            history,
+            settings,
+            _settingsStore,
+            localization,
+            _logger);
 
         var window = new MainWindow
         {
@@ -101,9 +116,11 @@ public partial class App : Application
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         _logger?.Error("Unhandled UI exception.", e.Exception);
+        var text = LocalizationService.Current;
         MessageBox.Show(
-            "NetCheck encountered an unexpected error. The error was logged locally. Repairs never run without your approval.",
-            "NetCheck error",
+            text?.Translate("NetCheck encountered an unexpected error. The error was logged locally. Repairs never run without your approval.")
+                ?? "NetCheck encountered an unexpected error. The error was logged locally. Repairs never run without your approval.",
+            text?.Translate("NetCheck error") ?? "NetCheck error",
             MessageBoxButton.OK,
             MessageBoxImage.Error);
         e.Handled = true;

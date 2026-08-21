@@ -2,15 +2,14 @@
 
 NetCheck is a native Windows desktop application that explains *why* a computer has no internet access, limited connectivity, or an unstable connection. It performs a read-only assessment, correlates the evidence, presents a plain-language diagnosis, and can apply an explicitly approved repair plan for supported Windows configuration problems.
 
-## What is new in 1.2
+## What is new in 1.3
 
-- A **Fix issue** button that builds a repair plan from the actual diagnostic evidence
-- Clear confirmation of every proposed change before anything runs
-- Supported repairs for DHCP, DNS cache, ARP cache, user proxy, Winsock, and TCP/IP problems
-- Administrator approval only for the specific repairs that require it
-- Automatic post-repair diagnostics when a Windows restart is not required
-- A persistent English/German navigation switch in the sidebar
-- English remains the default for diagnoses, settings, evidence, and exported reports
+- Complete English and German localization across the shell, dashboard, diagnostics, history, settings, dialogs, and exported reports
+- Immediate language switching while retaining language-neutral saved diagnostic data
+- Simplified application shell without the former product badge, tagline, or private/local status badge
+- High-contrast white language choices and a concise `created by pcalsys` credit
+- A prominent experienced-users-only warning for advanced diagnostic settings
+- The evidence-based, confirmation-gated repair workflow introduced in 1.2 remains unchanged
 
 See the [changelog](CHANGELOG.md) for release details.
 
@@ -32,7 +31,7 @@ The diagnosis engine correlates results instead of treating every failed ping as
 ## User experience
 
 - Friendly, modern WPF dashboard with live progress and cancellation
-- Switchable English or German navigation menu; diagnostic content remains in English
+- Complete, switchable English or German interface and diagnostic presentation
 - Plain-language overall diagnosis and prioritized next steps
 - Evidence-based repair plans with per-step results and restart guidance
 - Expandable technical evidence for every check
@@ -76,7 +75,7 @@ Create a self-contained Windows x64 release and ZIP archive:
 .\scripts\publish.ps1
 ```
 
-Outputs are written under `artifacts\publish\win-x64` and `artifacts\NetCheck-1.2.0-win-x64.zip`.
+Outputs are written under `artifacts\publish\win-x64` and `artifacts\NetCheck-1.3.0-win-x64.zip`.
 
 ## Privacy and data
 

@@ -26,5 +26,6 @@ public sealed record DiagnosticOptions
     public bool SaveDiagnosticHistory { get; init; } = true;
 
     public bool IncludeComputerNameInExports { get; init; }
-}
 
+    public string MenuLanguage { get; init; } = "en";
+}

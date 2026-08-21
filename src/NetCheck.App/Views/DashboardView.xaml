@@ -4,235 +4,285 @@
              xmlns:controls="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework"
              AutomationProperties.Name="Network diagnostics dashboard">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="30,26,30,36" MaxWidth="1100" HorizontalAlignment="Stretch">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-
-            <Grid Grid.Row="0" Margin="0,0,0,22">
+        <StackPanel Margin="34,28,34,42" MaxWidth="1120" HorizontalAlignment="Stretch">
+            <Grid Margin="0,0,0,24">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <TextBlock Text="Network diagnostics" Style="{StaticResource PageTitleStyle}" />
-                    <TextBlock Text="Find out what is preventing a reliable internet connection."
+                    <TextBlock Text="CONNECTION HEALTH" Style="{StaticResource PageEyebrowStyle}" />
+                    <TextBlock Text="Let’s check your connection" Style="{StaticResource PageTitleStyle}" Margin="0,4,0,0" />
+                    <TextBlock Text="A guided diagnosis that turns network signals into clear, practical next steps."
                                Style="{StaticResource MutedTextStyle}" Margin="0,5,0,0" />
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="18,0,0,1">
                     <Button Content="Cancel" Command="{Binding CancelCommand}"
-                            Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0"
+                            Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,9,0"
                             Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityConverter}}" />
                     <Button Command="{Binding RunCommand}" Style="{StaticResource PrimaryButtonStyle}"
-                            AutomationProperties.Name="Run network diagnostic">
+                            AutomationProperties.Name="Start network check">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="↻" Foreground="White" FontSize="17" Margin="0,-1,8,0" TextWrapping="NoWrap" />
-                            <TextBlock Text="Run diagnostic" Foreground="White" />
+                            <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" Foreground="White"
+                                       FontSize="15" Margin="0,0,8,0" TextWrapping="NoWrap" />
+                            <TextBlock Text="Start network check" Foreground="White" TextWrapping="NoWrap" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
             </Grid>
 
-            <Border Grid.Row="1"
-                    Background="{Binding StatusOutcome, Converter={StaticResource OutcomeToTintBrushConverter}}"
+            <Border Background="{Binding StatusOutcome, Converter={StaticResource OutcomeToTintBrushConverter}}"
                     BorderBrush="{Binding StatusOutcome, Converter={StaticResource OutcomeToBrushConverter}}"
-                    BorderThickness="1,1,1,1"
-                    CornerRadius="13" Padding="24" Margin="0,0,0,24">
+                    BorderThickness="1" CornerRadius="17" Padding="24" Margin="0,0,0,24">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Border Width="48" Height="48" CornerRadius="24"
+                    <Border Width="52" Height="52" CornerRadius="15"
                             Background="{Binding StatusOutcome, Converter={StaticResource OutcomeToBrushConverter}}"
                             VerticalAlignment="Top">
-                        <TextBlock Text="⌁" Foreground="White" FontSize="27" FontWeight="SemiBold"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="NoWrap" />
+                        <TextBlock Text="&#xE774;" FontFamily="{StaticResource IconFont}" Foreground="White"
+                                   FontSize="23" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   TextWrapping="NoWrap" />
                     </Border>
-                    <StackPanel Grid.Column="1" Margin="16,0,20,0" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding StatusTitle}" FontSize="20" FontWeight="SemiBold" />
+                    <StackPanel Grid.Column="1" Margin="17,1,24,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusTitle}" FontFamily="{StaticResource DisplayFont}"
+                                   FontSize="20" FontWeight="SemiBold" />
                         <TextBlock Text="{Binding StatusSummary}" Foreground="{StaticResource MutedTextBrush}"
                                    FontSize="13" LineHeight="20" Margin="0,5,0,0" MaxWidth="700"
                                    HorizontalAlignment="Left" />
                         <StackPanel Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                    Margin="0,14,0,0">
+                                    Margin="0,15,0,0">
                             <ProgressBar Value="{Binding ProgressPercentage, Mode=OneWay}" Maximum="100" />
-                            <TextBlock Text="{Binding ProgressPercentage, StringFormat={}{0}% complete}"
-                                       Foreground="{StaticResource MutedTextBrush}" FontSize="11" Margin="0,5,0,0" />
+                            <Grid Margin="0,6,0,0">
+                                <TextBlock Text="Working through the checks…" Foreground="{StaticResource MutedTextBrush}"
+                                           FontSize="10" />
+                                <TextBlock Text="{Binding ProgressPercentage, StringFormat={}{0}%}"
+                                           Foreground="{StaticResource MutedTextBrush}" FontSize="10"
+                                           HorizontalAlignment="Right" TextWrapping="NoWrap" />
+                            </Grid>
                         </StackPanel>
                         <TextBlock Text="{Binding CompletedText}" Style="{StaticResource MutedTextStyle}" Margin="0,8,0,0"
                                    Visibility="{Binding Report, Converter={StaticResource NotNullToVisibilityConverter}}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top"
                                 Visibility="{Binding Report, Converter={StaticResource NotNullToVisibilityConverter}}">
-                        <Button Content="Copy summary" Command="{Binding CopySummaryCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" />
-                        <Button Content="Export" Command="{Binding ExportCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}" />
+                        <Button Command="{Binding CopySummaryCommand}" Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="13,8" MinHeight="36" Margin="0,0,7,0" AutomationProperties.Name="Copy summary">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8C8;" FontFamily="{StaticResource IconFont}" FontSize="13"
+                                           Margin="0,0,7,0" Foreground="{StaticResource TextBrush}" />
+                                <TextBlock Text="Copy" TextWrapping="NoWrap" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="13,8" MinHeight="36" AutomationProperties.Name="Export report">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xEDE1;" FontFamily="{StaticResource IconFont}" FontSize="13"
+                                           Margin="0,0,7,0" Foreground="{StaticResource TextBrush}" />
+                                <TextBlock Text="Export" TextWrapping="NoWrap" />
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <StackPanel Grid.Row="2" Margin="0,0,0,24"
+            <controls:UniformGrid Columns="3" Margin="0,0,0,25"
+                                  Visibility="{Binding Report, Converter={StaticResource NullToVisibilityConverter}}">
+                <Border Style="{StaticResource CardStyle}" Margin="0,0,6,0" Padding="18">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="36" Height="36" CornerRadius="11" Background="{StaticResource PrimarySoftBrush}">
+                            <TextBlock Text="&#xE9D9;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource PrimaryBrush}"
+                                       FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                            <TextBlock Text="8 focused checks" FontSize="13" FontWeight="SemiBold" />
+                            <TextBlock Text="From your adapter to web access" Style="{StaticResource MutedTextStyle}" FontSize="11" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Margin="3,0" Padding="18">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="36" Height="36" CornerRadius="11" Background="#EAF7F4">
+                            <TextBlock Text="&#xE72E;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource SuccessBrush}"
+                                       FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                            <TextBlock Text="Nothing is changed" FontSize="13" FontWeight="SemiBold" />
+                            <TextBlock Text="Every diagnostic is read-only" Style="{StaticResource MutedTextStyle}" FontSize="11" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Margin="6,0,0,0" Padding="18">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="36" Height="36" CornerRadius="11" Background="#FFF3E4">
+                            <TextBlock Text="&#xE8B7;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource WarningBrush}"
+                                       FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                            <TextBlock Text="Results stay local" FontSize="13" FontWeight="SemiBold" />
+                            <TextBlock Text="No account or cloud upload needed" Style="{StaticResource MutedTextStyle}" FontSize="11" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </controls:UniformGrid>
+
+            <StackPanel Margin="0,0,0,25"
                         Visibility="{Binding Report, Converter={StaticResource NotNullToVisibilityConverter}}">
-                <TextBlock Text="Network overview" Style="{StaticResource SectionTitleStyle}" />
+                <Grid Margin="0,0,0,13">
+                    <TextBlock Text="Network at a glance" Style="{StaticResource SectionTitleStyle}" Margin="0" />
+                    <TextBlock Text="The key details NetCheck used for this diagnosis" Style="{StaticResource MutedTextStyle}"
+                               HorizontalAlignment="Right" VerticalAlignment="Center" />
+                </Grid>
                 <controls:UniformGrid Columns="4">
-                    <Border Style="{StaticResource CardStyle}" Margin="0,0,9,0" Padding="16">
+                    <Border Style="{StaticResource CardStyle}" Margin="0,0,6,0" Padding="17">
                         <StackPanel>
-                            <TextBlock Text="ADAPTER" Foreground="{StaticResource MutedTextBrush}" FontSize="9" FontWeight="Bold" />
+                            <TextBlock Text="ADAPTER" Style="{StaticResource MetricLabelStyle}" />
                             <TextBlock Text="{Binding PrimaryAdapterName}" FontSize="14" FontWeight="SemiBold"
-                                       Margin="0,7,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                       Margin="0,8,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource CardStyle}" Margin="3,0,6,0" Padding="16">
+                    <Border Style="{StaticResource CardStyle}" Margin="2,0,4,0" Padding="17">
                         <StackPanel>
-                            <TextBlock Text="IP ADDRESS" Foreground="{StaticResource MutedTextBrush}" FontSize="9" FontWeight="Bold" />
+                            <TextBlock Text="IP ADDRESS" Style="{StaticResource MetricLabelStyle}" />
                             <TextBlock Text="{Binding PrimaryIpAddress}" FontSize="14" FontWeight="SemiBold"
-                                       Margin="0,7,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                       Margin="0,8,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource CardStyle}" Margin="6,0,3,0" Padding="16">
+                    <Border Style="{StaticResource CardStyle}" Margin="4,0,2,0" Padding="17">
                         <StackPanel>
-                            <TextBlock Text="GATEWAY" Foreground="{StaticResource MutedTextBrush}" FontSize="9" FontWeight="Bold" />
+                            <TextBlock Text="GATEWAY" Style="{StaticResource MetricLabelStyle}" />
                             <TextBlock Text="{Binding PrimaryGateway}" FontSize="14" FontWeight="SemiBold"
-                                       Margin="0,7,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                       Margin="0,8,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource CardStyle}" Margin="9,0,0,0" Padding="16">
+                    <Border Style="{StaticResource CardStyle}" Margin="6,0,0,0" Padding="17">
                         <StackPanel>
-                            <TextBlock Text="DNS SERVER" Foreground="{StaticResource MutedTextBrush}" FontSize="9" FontWeight="Bold" />
+                            <TextBlock Text="DNS SERVER" Style="{StaticResource MetricLabelStyle}" />
                             <TextBlock Text="{Binding PrimaryDnsServer}" FontSize="14" FontWeight="SemiBold"
-                                       Margin="0,7,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                       Margin="0,8,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                         </StackPanel>
                     </Border>
                 </controls:UniformGrid>
             </StackPanel>
 
-            <Border Grid.Row="3" Style="{StaticResource CardStyle}" Margin="0,0,0,24"
+            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,25" Padding="22"
                     Visibility="{Binding HasRecommendations, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <StackPanel>
-                    <TextBlock Text="Recommended next steps" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10" />
-                    <ItemsControl ItemsSource="{Binding Report.Diagnosis.RecommendedActions}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Margin="0,4">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="24" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Width="18" Height="18" CornerRadius="9" Background="#E8EEFC" VerticalAlignment="Top">
-                                        <TextBlock Text="›" Foreground="{StaticResource PrimaryBrush}" FontWeight="Bold"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="NoWrap" />
-                                    </Border>
-                                    <TextBlock Grid.Column="1" Text="{Binding}" FontSize="13" LineHeight="20" />
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="40" Height="40" CornerRadius="12" Background="#FFF3E4" VerticalAlignment="Top">
+                        <TextBlock Text="&#xE945;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource WarningBrush}"
+                                   FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="14,0,0,0">
+                        <TextBlock Text="Recommended next steps" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <ItemsControl ItemsSource="{Binding Report.Diagnosis.RecommendedActions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="17" Height="17" CornerRadius="9" Background="{StaticResource PrimarySoftBrush}"
+                                                VerticalAlignment="Top" Margin="0,1,0,0">
+                                            <TextBlock Text="&#xE76C;" FontFamily="{StaticResource IconFont}"
+                                                       Foreground="{StaticResource PrimaryBrush}" FontSize="8"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Grid.Column="1" Text="{Binding}" FontSize="13" LineHeight="20" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Grid>
             </Border>
 
-            <StackPanel Grid.Row="4">
-                <TextBlock Text="Diagnostic checks" Style="{StaticResource SectionTitleStyle}" />
+            <Grid Margin="0,0,0,13">
+                <StackPanel>
+                    <TextBlock Text="Diagnostic checks" Style="{StaticResource SectionTitleStyle}" Margin="0" />
+                    <TextBlock Text="Open a check to see the technical evidence behind it."
+                               Style="{StaticResource MutedTextStyle}" Margin="0,3,0,0" />
+                </StackPanel>
+                <TextBlock Text="{Binding Results.Count, StringFormat={}{0} complete}"
+                           Style="{StaticResource MutedTextStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom" />
+            </Grid>
 
-                <Border Padding="28" HorizontalAlignment="Stretch">
-                    <Border.Style>
-                        <Style TargetType="Border" BasedOn="{StaticResource CardStyle}">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding Report}" Value="{x:Null}" />
-                                        <Condition Binding="{Binding IsRunning}" Value="False" />
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </MultiDataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="◎" FontSize="34" Foreground="{StaticResource PrimaryBrush}"
-                                   HorizontalAlignment="Center" TextWrapping="NoWrap" />
-                        <TextBlock Text="No diagnostic has run yet" FontSize="16" FontWeight="SemiBold"
-                                   HorizontalAlignment="Center" Margin="0,8,0,4" />
-                        <TextBlock Text="Choose Run diagnostic to begin a read-only network assessment."
-                                   Style="{StaticResource MutedTextStyle}" HorizontalAlignment="Center" />
-                    </StackPanel>
-                </Border>
-
-                <ItemsControl ItemsSource="{Binding Results}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Style="{StaticResource CardStyle}" Padding="0" Margin="0,0,0,10">
-                                <Expander IsExpanded="False" Padding="0">
-                                    <Expander.Header>
-                                        <Grid Margin="18,14" HorizontalAlignment="Stretch">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="36" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <Border Width="28" Height="28" CornerRadius="14"
-                                                    Background="{Binding Status, Converter={StaticResource OutcomeToBrushConverter}}">
-                                                <TextBlock Text="{Binding Status, Converter={StaticResource StatusToGlyphConverter}}"
-                                                           Foreground="White" FontWeight="Bold" FontSize="15"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="NoWrap" />
-                                            </Border>
-                                            <StackPanel Grid.Column="1" Margin="8,0,18,0">
-                                                <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" />
-                                                <TextBlock Text="{Binding Summary}" Foreground="{StaticResource MutedTextBrush}"
-                                                           FontSize="12" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"
-                                                           TextWrapping="NoWrap" />
-                                            </StackPanel>
-                                            <TextBlock Grid.Column="2"
-                                                       Text="{Binding Status, Converter={StaticResource StatusToLabelConverter}}"
-                                                       Foreground="{Binding Status, Converter={StaticResource OutcomeToBrushConverter}}"
-                                                       FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
-                                        </Grid>
-                                    </Expander.Header>
-                                    <StackPanel Margin="54,0,20,20">
-                                        <TextBlock Text="{Binding Detail}" Style="{StaticResource MutedTextStyle}"
-                                                   Margin="0,0,0,10" />
-                                        <ItemsControl ItemsSource="{Binding Evidence}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid Margin="0,2">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="145" />
-                                                            <ColumnDefinition Width="*" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="{Binding Key}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
-                                                        <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="12" TextWrapping="Wrap" />
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                        <ItemsControl ItemsSource="{Binding Recommendations}" Margin="0,10,0,0">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid Margin="0,2">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="14" />
-                                                            <ColumnDefinition Width="*" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="•" FontSize="12" TextWrapping="NoWrap" />
-                                                        <TextBlock Grid.Column="1" Text="{Binding}" FontSize="12" />
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
+            <ItemsControl ItemsSource="{Binding Results}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Expander Style="{StaticResource DiagnosticExpanderStyle}">
+                            <Expander.Header>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="34" Height="34" CornerRadius="11"
+                                            Background="{Binding Status, Converter={StaticResource OutcomeToBrushConverter}}">
+                                        <TextBlock Text="{Binding Status, Converter={StaticResource StatusToGlyphConverter}}"
+                                                   Foreground="White" FontSize="14" FontWeight="Bold"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="NoWrap" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="12,0,18,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Summary}" Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="11" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap" />
                                     </StackPanel>
-                                </Expander>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
-        </Grid>
+                                    <Border Grid.Column="2" Background="{StaticResource SurfaceSubtleBrush}"
+                                            CornerRadius="10" Padding="9,4" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Status, Converter={StaticResource StatusToLabelConverter}}"
+                                                   Foreground="{Binding Status, Converter={StaticResource OutcomeToBrushConverter}}"
+                                                   FontSize="9" FontWeight="Bold" TextWrapping="NoWrap" />
+                                    </Border>
+                                </Grid>
+                            </Expander.Header>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Detail}" Style="{StaticResource MutedTextStyle}"
+                                           Visibility="{Binding Detail, Converter={StaticResource NonEmptyStringToVisibilityConverter}}"
+                                           Margin="0,0,0,10" />
+                                <ItemsControl ItemsSource="{Binding Evidence}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="175" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Key}" Foreground="{StaticResource MutedTextBrush}"
+                                                           FontSize="11" FontWeight="SemiBold" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="11" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="{Binding Duration.TotalMilliseconds, StringFormat=Completed in {0:0} ms}"
+                                           Foreground="{StaticResource SoftTextBrush}" FontSize="10" Margin="0,10,0,0" />
+                            </StackPanel>
+                        </Expander>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
     </ScrollViewer>
 </UserControl>

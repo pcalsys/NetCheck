@@ -67,7 +67,7 @@ public partial class App : Application
             messageService,
             _logger);
         var settings = new SettingsViewModel(_settingsStore, messageService, _logger);
-        var mainViewModel = new MainViewModel(dashboard, history, settings);
+        var mainViewModel = new MainViewModel(dashboard, history, settings, _settingsStore, _logger);
 
         var window = new MainWindow
         {
@@ -109,4 +109,3 @@ public partial class App : Application
         e.SetObserved();
     }
 }
-

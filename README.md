@@ -2,6 +2,15 @@
 
 NetCheck is a native Windows desktop application that explains *why* a computer has no internet access, limited connectivity, or an unstable connection. It performs a read-only assessment, correlates the evidence, and presents a plain-language diagnosis with safe next steps.
 
+## What is new in 1.1
+
+- A completely refreshed interface with clearer hierarchy, friendlier guidance, and modern status cards
+- A persistent English/German navigation switch in the sidebar
+- Redesigned dashboard, report history, and settings experiences
+- English remains the default for diagnoses, settings, evidence, and exported reports
+
+See the [changelog](CHANGELOG.md) for release details.
+
 ## What it checks
 
 | Stage | What NetCheck determines |
@@ -19,7 +28,8 @@ The diagnosis engine correlates results instead of treating every failed ping as
 
 ## User experience
 
-- Modern WPF dashboard with live progress and cancellation
+- Friendly, modern WPF dashboard with live progress and cancellation
+- Switchable English or German navigation menu; diagnostic content remains in English
 - Plain-language overall diagnosis and prioritized next steps
 - Expandable technical evidence for every check
 - Local diagnostic history with report review
@@ -62,7 +72,7 @@ Create a self-contained Windows x64 release and ZIP archive:
 .\scripts\publish.ps1
 ```
 
-Outputs are written under `artifacts\publish\win-x64` and `artifacts\NetCheck-1.0.0-win-x64.zip`.
+Outputs are written under `artifacts\publish\win-x64` and `artifacts\NetCheck-1.1.0-win-x64.zip`.
 
 ## Privacy and data
 

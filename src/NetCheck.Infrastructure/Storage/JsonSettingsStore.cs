@@ -93,7 +93,9 @@ public sealed class JsonSettingsStore : ISettingsStore, IDisposable
         HttpTimeoutSeconds = Math.Clamp(settings.HttpTimeoutSeconds, 2, 30),
         StabilitySampleCount = Math.Clamp(settings.StabilitySampleCount, 3, 20),
         PacketLossWarningPercent = Math.Clamp(settings.PacketLossWarningPercent, 1, 100),
-        LatencyWarningMilliseconds = Math.Clamp(settings.LatencyWarningMilliseconds, 10, 2000)
+        LatencyWarningMilliseconds = Math.Clamp(settings.LatencyWarningMilliseconds, 10, 2000),
+        MenuLanguage = string.Equals(settings.MenuLanguage, "de", StringComparison.OrdinalIgnoreCase)
+            ? "de"
+            : "en"
     };
 }
-

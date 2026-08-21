@@ -25,6 +25,12 @@ NetCheck.Core ◄── NetCheck.Infrastructure
 
 `NetCheck.Core` has no Windows desktop dependency. It owns the diagnostic vocabulary, orchestration contract, ordered execution engine, and root-cause analysis. `NetCheck.Infrastructure` implements the operating-system and I/O boundaries. `NetCheck.App` is the composition root and owns WPF-specific behavior such as dialogs, commands, and visual state.
 
+## Presentation and menu language
+
+The WPF shell uses MVVM navigation and a shared resource dictionary for the visual system. Dashboard, history, and settings views contain only presentation bindings; diagnostic behavior remains in Core and Infrastructure.
+
+English is the default and remains the language for diagnoses, settings, reports, and technical evidence. The navigation menu can be switched independently between English and German. Its normalized `en` or `de` preference is stored with the local application settings so it survives restarts without changing the process culture or diagnostic output.
+
 ## Diagnostic execution
 
 The engine captures a single network snapshot, orders checks by their declared stage, and publishes start/completion progress for each check. Results are added to a shared diagnostic context so later checks can make safe dependency decisions. For example, gateway and DNS checks skip when no usable local adapter exists, and stability sampling only runs against a public target that already replied.
@@ -67,4 +73,3 @@ The exporter supports HTML, JSON, and plain text. HTML values are encoded before
 ## Extension points
 
 Add a diagnostic by implementing `IDiagnosticCheck`, giving it a unique ID and order, then registering it in the application composition root. Add a storage or export format behind the existing Core interfaces. Diagnosis changes belong in `DiagnosisAnalyzer` and should include regression tests.
-

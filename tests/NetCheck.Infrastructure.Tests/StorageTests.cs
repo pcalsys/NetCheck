@@ -37,7 +37,8 @@ public sealed class StorageTests
             PingTimeoutMilliseconds = 100,
             StabilitySampleCount = 100,
             PacketLossWarningPercent = 0,
-            LatencyWarningMilliseconds = 9000
+            LatencyWarningMilliseconds = 9000,
+            MenuLanguage = "DE"
         };
 
         await store.SaveAsync(settings);
@@ -49,6 +50,20 @@ public sealed class StorageTests
         Assert.Equal(20, loaded.StabilitySampleCount);
         Assert.Equal(1, loaded.PacketLossWarningPercent);
         Assert.Equal(2000, loaded.LatencyWarningMilliseconds);
+        Assert.Equal("de", loaded.MenuLanguage);
+    }
+
+    [Fact]
+    public async Task SettingsStore_UsesEnglishForUnsupportedMenuLanguage()
+    {
+        using var directory = new TemporaryDirectory();
+        var paths = new AppDataPaths(directory.Path);
+        using var store = new JsonSettingsStore(paths);
+
+        await store.SaveAsync(new DiagnosticOptions { MenuLanguage = "fr" });
+
+        var loaded = await store.LoadAsync();
+
+        Assert.Equal("en", loaded.MenuLanguage);
     }
 }
-

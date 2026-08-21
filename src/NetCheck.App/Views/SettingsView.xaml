@@ -3,48 +3,75 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              AutomationProperties.Name="NetCheck settings">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="30,26,30,36" MaxWidth="850" HorizontalAlignment="Left">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-
-            <StackPanel Grid.Row="0" Margin="0,0,0,22">
-                <TextBlock Text="Settings" Style="{StaticResource PageTitleStyle}" />
-                <TextBlock Text="Customize diagnostic targets, thresholds, history, and report privacy."
-                           Style="{StaticResource MutedTextStyle}" Margin="0,5,0,0" />
-            </StackPanel>
-
-            <Border Grid.Row="1" Style="{StaticResource CardStyle}" Margin="0,0,0,16">
+        <StackPanel Margin="34,28,34,42" MaxWidth="930" HorizontalAlignment="Center">
+            <Grid Margin="0,0,0,24">
                 <StackPanel>
-                    <TextBlock Text="Diagnostic targets" Style="{StaticResource SectionTitleStyle}" />
-
-                    <TextBlock Text="DNS test hostname" FontSize="13" FontWeight="SemiBold" />
-                    <TextBox Text="{Binding DnsTestHost, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,3"
-                             AutomationProperties.Name="DNS test hostname" />
-                    <TextBlock Text="A stable public hostname used only to confirm name resolution."
-                               Style="{StaticResource MutedTextStyle}" Margin="0,0,0,14" />
-
-                    <TextBlock Text="Internet ping targets" FontSize="13" FontWeight="SemiBold" />
-                    <TextBox Text="{Binding PingTargets, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,3"
-                             AutomationProperties.Name="Internet ping targets" />
-                    <TextBlock Text="One or more IP addresses, separated by commas. NetCheck stops after the first response."
-                               Style="{StaticResource MutedTextStyle}" Margin="0,0,0,14" />
-
-                    <TextBlock Text="Web connectivity URL" FontSize="13" FontWeight="SemiBold" />
-                    <TextBox Text="{Binding ConnectivityUrl, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,3"
-                             AutomationProperties.Name="Web connectivity URL" />
-                    <TextBlock Text="A lightweight endpoint used to validate web access and detect sign-in redirects."
-                               Style="{StaticResource MutedTextStyle}" />
+                    <TextBlock Text="MAKE IT YOURS" Style="{StaticResource PageEyebrowStyle}" />
+                    <TextBlock Text="Tune NetCheck to your network" Style="{StaticResource PageTitleStyle}" Margin="0,4,0,0" />
+                    <TextBlock Text="Adjust what gets tested and when NetCheck should flag connection quality for your attention."
+                               Style="{StaticResource MutedTextStyle}" Margin="0,5,0,0" />
                 </StackPanel>
+            </Grid>
+
+            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16" Padding="0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="205" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Background="{StaticResource SurfaceSubtleBrush}" CornerRadius="16,0,0,16" Padding="22">
+                        <StackPanel>
+                            <Border Width="42" Height="42" CornerRadius="13" Background="{StaticResource PrimarySoftBrush}"
+                                    HorizontalAlignment="Left">
+                                <TextBlock Text="&#xE774;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource PrimaryBrush}"
+                                           FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="Diagnostic targets" FontSize="16" FontWeight="SemiBold" Margin="0,14,0,5" />
+                            <TextBlock Text="The trusted destinations NetCheck uses to confirm each layer of connectivity."
+                                       Style="{StaticResource MutedTextStyle}" FontSize="11" />
+                        </StackPanel>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="24,22">
+                        <TextBlock Text="DNS test hostname" Style="{StaticResource FieldLabelStyle}" />
+                        <TextBox Text="{Binding DnsTestHost, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="DNS test hostname" />
+                        <TextBlock Text="A stable public hostname used only to confirm name resolution."
+                                   Style="{StaticResource MutedTextStyle}" FontSize="11" Margin="0,4,0,16" />
+
+                        <TextBlock Text="Internet ping targets" Style="{StaticResource FieldLabelStyle}" />
+                        <TextBox Text="{Binding PingTargets, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="Internet ping targets" />
+                        <TextBlock Text="Use one or more IP addresses separated by commas. Testing stops after the first response."
+                                   Style="{StaticResource MutedTextStyle}" FontSize="11" Margin="0,4,0,16" />
+
+                        <TextBlock Text="Web connectivity URL" Style="{StaticResource FieldLabelStyle}" />
+                        <TextBox Text="{Binding ConnectivityUrl, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="Web connectivity URL" />
+                        <TextBlock Text="A lightweight endpoint that confirms web access and helps identify sign-in portals."
+                                   Style="{StaticResource MutedTextStyle}" FontSize="11" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Grid>
             </Border>
 
-            <Border Grid.Row="2" Style="{StaticResource CardStyle}" Margin="0,0,0,16">
-                <StackPanel>
-                    <TextBlock Text="Quality thresholds" Style="{StaticResource SectionTitleStyle}" />
-                    <Grid>
+            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16" Padding="0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="205" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Background="{StaticResource SurfaceSubtleBrush}" CornerRadius="16,0,0,16" Padding="22">
+                        <StackPanel>
+                            <Border Width="42" Height="42" CornerRadius="13" Background="#FFF3E4"
+                                    HorizontalAlignment="Left">
+                                <TextBlock Text="&#xE9D9;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource WarningBrush}"
+                                           FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="Quality thresholds" FontSize="16" FontWeight="SemiBold" Margin="0,14,0,5" />
+                            <TextBlock Text="Choose when latency or packet loss should be called out as unstable."
+                                       Style="{StaticResource MutedTextStyle}" FontSize="11" />
+                        </StackPanel>
+                    </Border>
+                    <Grid Grid.Column="1" Margin="24,22">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="18" />
@@ -52,59 +79,111 @@
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="18" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,15">
-                            <TextBlock Text="Ping timeout (milliseconds)" FontSize="13" FontWeight="SemiBold" />
-                            <TextBox Text="{Binding PingTimeoutMilliseconds, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,0" />
-                            <TextBlock Text="500–5000" Style="{StaticResource MutedTextStyle}" />
+                        <StackPanel Grid.Row="0" Grid.Column="0">
+                            <TextBlock Text="Ping timeout" Style="{StaticResource FieldLabelStyle}" />
+                            <Grid>
+                                <TextBox Text="{Binding PingTimeoutMilliseconds, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="11,9,50,9" AutomationProperties.Name="Ping timeout in milliseconds" />
+                                <TextBlock Text="ms" Foreground="{StaticResource MutedTextBrush}" FontSize="11"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" />
+                            </Grid>
+                            <TextBlock Text="500–5000 milliseconds" Style="{StaticResource MutedTextStyle}" FontSize="10" Margin="0,4,0,0" />
                         </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,15">
-                            <TextBlock Text="Stability samples" FontSize="13" FontWeight="SemiBold" />
-                            <TextBox Text="{Binding StabilitySampleCount, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,0" />
-                            <TextBlock Text="3–20" Style="{StaticResource MutedTextStyle}" />
+                        <StackPanel Grid.Row="0" Grid.Column="2">
+                            <TextBlock Text="Stability samples" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBox Text="{Binding StabilitySampleCount, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.Name="Number of stability samples" />
+                            <TextBlock Text="3–20 requests" Style="{StaticResource MutedTextStyle}" FontSize="10" Margin="0,4,0,0" />
                         </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="0">
-                            <TextBlock Text="Packet-loss warning (%)" FontSize="13" FontWeight="SemiBold" />
-                            <TextBox Text="{Binding PacketLossWarningPercent, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,0" />
-                            <TextBlock Text="1–100" Style="{StaticResource MutedTextStyle}" />
+                        <StackPanel Grid.Row="2" Grid.Column="0">
+                            <TextBlock Text="Packet-loss warning" Style="{StaticResource FieldLabelStyle}" />
+                            <Grid>
+                                <TextBox Text="{Binding PacketLossWarningPercent, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="11,9,44,9" AutomationProperties.Name="Packet loss warning percentage" />
+                                <TextBlock Text="%" Foreground="{StaticResource MutedTextBrush}" FontSize="11"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" />
+                            </Grid>
+                            <TextBlock Text="1–100 percent" Style="{StaticResource MutedTextStyle}" FontSize="10" Margin="0,4,0,0" />
                         </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="2">
-                            <TextBlock Text="Latency warning (milliseconds)" FontSize="13" FontWeight="SemiBold" />
-                            <TextBox Text="{Binding LatencyWarningMilliseconds, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,0" />
-                            <TextBlock Text="10–2000" Style="{StaticResource MutedTextStyle}" />
+                        <StackPanel Grid.Row="2" Grid.Column="2">
+                            <TextBlock Text="Latency warning" Style="{StaticResource FieldLabelStyle}" />
+                            <Grid>
+                                <TextBox Text="{Binding LatencyWarningMilliseconds, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="11,9,50,9" AutomationProperties.Name="Latency warning in milliseconds" />
+                                <TextBlock Text="ms" Foreground="{StaticResource MutedTextBrush}" FontSize="11"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" />
+                            </Grid>
+                            <TextBlock Text="10–2000 milliseconds" Style="{StaticResource MutedTextStyle}" FontSize="10" Margin="0,4,0,0" />
                         </StackPanel>
                     </Grid>
-                </StackPanel>
+                </Grid>
             </Border>
 
-            <Border Grid.Row="3" Style="{StaticResource CardStyle}">
-                <StackPanel>
-                    <TextBlock Text="Behavior and privacy" Style="{StaticResource SectionTitleStyle}" />
-                    <CheckBox Content="Run a diagnostic automatically when NetCheck starts"
-                              IsChecked="{Binding AutoRunOnLaunch}" />
-                    <CheckBox Content="Save completed diagnostics in local history"
-                              IsChecked="{Binding SaveDiagnosticHistory}" />
-                    <CheckBox Content="Include the computer name in exported reports"
-                              IsChecked="{Binding IncludeComputerNameInExports}" />
-                    <TextBlock Text="Computer names are redacted from exports by default. Reports and settings stay under the current user’s local application data folder."
-                               Style="{StaticResource MutedTextStyle}" Margin="0,5,0,16" />
-
-                    <Border Background="#FFF7E6" BorderBrush="#F1D69C" BorderThickness="1" CornerRadius="7"
-                            Padding="11" Margin="0,0,0,16"
-                            Visibility="{Binding StatusMessage, Converter={StaticResource NonEmptyStringToVisibilityConverter}}">
-                        <TextBlock Text="{Binding StatusMessage}" Foreground="#7F550F" FontSize="12" />
+            <Border Style="{StaticResource CardStyle}" Padding="0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="205" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Background="{StaticResource SurfaceSubtleBrush}" CornerRadius="16,0,0,16" Padding="22">
+                        <StackPanel>
+                            <Border Width="42" Height="42" CornerRadius="13" Background="#EAF7F4"
+                                    HorizontalAlignment="Left">
+                                <TextBlock Text="&#xE72E;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource SuccessBrush}"
+                                           FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="Behavior &amp; privacy" FontSize="16" FontWeight="SemiBold" Margin="0,14,0,5" />
+                            <TextBlock Text="Decide what is automatic, what is saved, and what an export may include."
+                                       Style="{StaticResource MutedTextStyle}" FontSize="11" />
+                        </StackPanel>
                     </Border>
+                    <StackPanel Grid.Column="1" Margin="24,22">
+                        <CheckBox Content="Run a diagnostic automatically when NetCheck starts"
+                                  IsChecked="{Binding AutoRunOnLaunch}" />
+                        <CheckBox Content="Save completed diagnostics in local history"
+                                  IsChecked="{Binding SaveDiagnosticHistory}" />
+                        <CheckBox Content="Include the computer name in exported reports"
+                                  IsChecked="{Binding IncludeComputerNameInExports}" />
 
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Restore defaults" Command="{Binding ResetCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" />
-                        <Button Content="Save settings" Command="{Binding SaveCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}" />
+                        <Border Background="#F0F8F5" BorderBrush="#D7ECE5" BorderThickness="1" CornerRadius="10"
+                                Padding="12" Margin="0,10,0,17">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="&#xE72E;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource SuccessBrush}"
+                                           FontSize="13" Margin="0,1,9,0" />
+                                <TextBlock Grid.Column="1"
+                                           Text="Computer names are excluded from exports by default. Reports and settings stay in your local application data folder."
+                                           Foreground="#4B7165" FontSize="11" LineHeight="17" />
+                            </Grid>
+                        </Border>
+
+                        <Border Background="#FFF7E8" BorderBrush="#F1DCA9" BorderThickness="1" CornerRadius="10"
+                                Padding="12" Margin="0,0,0,17"
+                                Visibility="{Binding StatusMessage, Converter={StaticResource NonEmptyStringToVisibilityConverter}}">
+                            <TextBlock Text="{Binding StatusMessage}" Foreground="#7D5915" FontSize="11" />
+                        </Border>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Restore defaults" Command="{Binding ResetCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" />
+                            <Button Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE74E;" FontFamily="{StaticResource IconFont}" Foreground="White"
+                                               FontSize="13" Margin="0,0,7,0" />
+                                    <TextBlock Text="Save settings" Foreground="White" TextWrapping="NoWrap" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
+                </Grid>
             </Border>
-        </Grid>
+        </StackPanel>
     </ScrollViewer>
 </UserControl>

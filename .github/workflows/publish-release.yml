@@ -1,6 +1,9 @@
 name: Publish release assets
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
@@ -10,7 +13,7 @@ on:
         type: string
 
 concurrency:
-  group: publish-release-${{ inputs.tag }}
+  group: publish-release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 permissions:
@@ -20,13 +23,15 @@ jobs:
   publish-release:
     runs-on: windows-latest
     timeout-minutes: 30
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
     steps:
       - name: Validate release tag
         id: version
         shell: pwsh
         run: |
-          $tag = '${{ inputs.tag }}'
+          $tag = '${{ env.RELEASE_TAG }}'
           if ($tag -notmatch '^v\d+\.\d+\.\d+$') {
             throw "The release tag must use the vMAJOR.MINOR.PATCH format. Received: $tag"
           }
@@ -36,7 +41,7 @@ jobs:
       - name: Check out tagged source
         uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v5
@@ -165,12 +170,34 @@ jobs:
           "installer_sha256=$installerHash" >> $env:GITHUB_OUTPUT
           "installer_checksum_file=$installerChecksumFile" >> $env:GITHUB_OUTPUT
 
+      - name: Ensure GitHub release exists
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = '${{ env.RELEASE_TAG }}'
+          gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -ne 0) {
+            $version = '${{ steps.version.outputs.version }}'
+            $notesFile = Join-Path $env:RUNNER_TEMP 'NetCheck-release-notes.md'
+            $notes = @"
+          NetCheck $version adds persistent network monitoring, monitoring history, baseline comparisons, privacy-redacted support bundles, manual update checks, and bilingual UI improvements.
+
+          The public binaries are intentionally unsigned when real Authenticode signing secrets are not configured. Verify downloads with the attached SHA-256 files.
+          "@
+            [IO.File]::WriteAllText($notesFile, $notes, [Text.UTF8Encoding]::new($false))
+            gh release create $tag --repo $env:GITHUB_REPOSITORY --title "NetCheck $version" --notes-file $notesFile
+            if ($LASTEXITCODE -ne 0) {
+              throw "Could not create release $tag."
+            }
+          }
+
       - name: Upload release assets
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload '${{ inputs.tag }}' `
+          gh release upload '${{ env.RELEASE_TAG }}' `
             '${{ steps.checksum.outputs.archive }}' `
             '${{ steps.checksum.outputs.checksum_file }}' `
             '${{ steps.checksum.outputs.installer }}' `
@@ -183,7 +210,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = '${{ inputs.tag }}'
+          $tag = '${{ env.RELEASE_TAG }}'
           $hash = '${{ steps.checksum.outputs.sha256 }}'
           $release = gh release view $tag --repo $env:GITHUB_REPOSITORY --json body | ConvertFrom-Json
           if ($LASTEXITCODE -ne 0) {
@@ -210,7 +237,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = '${{ inputs.tag }}'
+          $tag = '${{ env.RELEASE_TAG }}'
           $version = '${{ steps.version.outputs.version }}'
           $expectedHash = '${{ steps.checksum.outputs.sha256 }}'
           $archive = '${{ steps.checksum.outputs.archive }}'

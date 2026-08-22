@@ -42,7 +42,9 @@ Every probe executes inside an exception boundary. Cancellation returns a partia
 
 ## Speed-test execution
 
-The manually started speed test is independent from the read-only diagnostic pipeline. `ISpeedTestService` and its progress/result models live in Core; the Cloudflare HTTP implementation lives in Infrastructure; the WPF view model owns cancellation, localization, and presentation state. A short probe sizes each bounded parallel transfer, avoiding a fixed large download on slow links while retaining enough data to sample faster links. Throughput is calculated from monotonic elapsed time and transferred bytes. Results distinguish full-transfer average throughput from the fastest sustained sampling interval and are not persisted.
+The manually started speed test is independent from the read-only diagnostic pipeline. `ISpeedTestService` and its progress/result models live in Core; the Cloudflare HTTP implementation lives in Infrastructure; the WPF view model owns cancellation, localization, presentation state, and best-effort local persistence. Parallel probes size five download rounds spread across 17 seconds and four upload rounds across 11 seconds. This preserves a roughly 30-second observation window even when a fast connection reaches the bounded traffic cap early. Throughput uses only active-transfer time, while scheduling gaps provide samples across the complete window. Results distinguish weighted active-transfer average throughput from the fastest sustained sampling interval.
+
+Diagnostic reports remain in their backward-compatible report store. Speed-test results, settings changes, and menu-language changes use a separate structured activity store. The history view merges both sources chronologically, localizes presentation values at display time, and clears both stores only after explicit confirmation.
 
 ## Root-cause analysis
 
@@ -69,9 +71,9 @@ Repairs that do not require a restart are followed by a fresh diagnostic. Winsoc
 
 ## Persistence
 
-History stores one JSON file per report under the current user’s local application data directory. Settings use a separate JSON file. Writes use a temporary sibling file followed by an atomic replacement, preventing a process interruption from leaving a partially written file.
+History stores one JSON file per diagnostic report and one JSON file per activity under separate directories in the current user’s local application data. Settings use a separate JSON file. Writes use a temporary sibling file followed by an atomic replacement, preventing a process interruption from leaving a partially written file.
 
-History loading isolates malformed or inaccessible report files. A bad report is skipped rather than making history unavailable.
+History loading isolates malformed or inaccessible report and activity files. A bad entry is skipped rather than making history unavailable.
 
 ## Export
 

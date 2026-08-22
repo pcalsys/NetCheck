@@ -25,8 +25,10 @@ public sealed class SpeedTestViewModelTests
             TimeSpan.FromSeconds(7.35),
             "Cloudflare",
             DateTimeOffset.UtcNow));
+        var history = new CollectingActivityHistoryStore();
         var viewModel = new SpeedTestViewModel(
             service,
+            history,
             localization,
             new FileLogger(Path.Combine(Path.GetTempPath(), $"NetCheck-{Guid.NewGuid():N}.log")));
 
@@ -39,6 +41,9 @@ public sealed class SpeedTestViewModelTests
         Assert.Equal("14 ms", viewModel.LatencyText);
         Assert.Equal("12,6 MB", viewModel.DataUsedText);
         Assert.Equal("Speedtest abgeschlossen", viewModel.StatusText);
+        var saved = Assert.Single(history.Entries);
+        Assert.Equal(ActivityHistoryKind.SpeedTest, saved.Kind);
+        Assert.Equal(viewModel.Result, saved.SpeedTestResult);
     }
 
     [Fact]
@@ -46,8 +51,10 @@ public sealed class SpeedTestViewModelTests
     {
         var localization = new LocalizationService();
         var service = new WaitingSpeedTestService();
+        var history = new CollectingActivityHistoryStore();
         var viewModel = new SpeedTestViewModel(
             service,
+            history,
             localization,
             new FileLogger(Path.Combine(Path.GetTempPath(), $"NetCheck-{Guid.NewGuid():N}.log")));
 
@@ -59,6 +66,7 @@ public sealed class SpeedTestViewModelTests
         Assert.False(viewModel.IsRunning);
         Assert.False(viewModel.HasResult);
         Assert.Equal("Speed test cancelled. No result was saved.", viewModel.StatusText);
+        Assert.Empty(history.Entries);
     }
 
     private sealed class StubSpeedTestService(SpeedTestResult result) : ISpeedTestService
@@ -83,6 +91,31 @@ public sealed class SpeedTestViewModelTests
             Started.TrySetResult();
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             throw new InvalidOperationException("The cancellation wait unexpectedly completed.");
+        }
+    }
+
+    private sealed class CollectingActivityHistoryStore : IActivityHistoryStore
+    {
+        public List<ActivityHistoryEntry> Entries { get; } = [];
+
+        public Task SaveAsync(
+            ActivityHistoryEntry entry,
+            CancellationToken cancellationToken = default)
+        {
+            Entries.Add(entry);
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyList<ActivityHistoryEntry>> GetRecentAsync(
+            int maximumCount,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<ActivityHistoryEntry>>(
+                Entries.OrderByDescending(entry => entry.OccurredAtUtc).Take(maximumCount).ToArray());
+
+        public Task ClearAsync(CancellationToken cancellationToken = default)
+        {
+            Entries.Clear();
+            return Task.CompletedTask;
         }
     }
 }

@@ -22,7 +22,7 @@ Do not disable organization-managed proxies, VPNs, firewalls, or DNS settings wi
 
 ## Speed-test results look too low
 
-Pause downloads, cloud backups, streaming, and VPN traffic, then compare another run. Test over Ethernet when possible because Wi-Fi signal, channel congestion, power-saving behavior, and other devices share the available capacity. The displayed maximum is the fastest sustained sample NetCheck observed during this run, not a guaranteed provider line rate. The test contacts Cloudflare and can use up to about 210 MB, so do not run it on a metered connection unless that data use is acceptable.
+Pause downloads, cloud backups, streaming, and VPN traffic, then compare another run. Test over Ethernet when possible because Wi-Fi signal, channel congestion, power-saving behavior, and other devices share the available capacity. A run samples the connection repeatedly for approximately 30 seconds. The displayed maximum is the fastest sustained sample NetCheck observed during this run, not a guaranteed provider line rate. The test contacts Cloudflare and can use up to about 200 MB, so do not run it on a metered connection unless that data use is acceptable. Completed results stay in NetCheck's local history.
 
 ## Fix detected issues
 

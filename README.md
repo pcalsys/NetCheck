@@ -15,7 +15,7 @@ NetCheck is a native Windows desktop application that explains *why* a computer 
 | Connection stability | Short-sample packet loss, average latency, and jitter |
 | Proxy configuration | Whether a user proxy may explain a failed web check |
 
-The separate, manually started speed test measures latency plus average and maximum observed download and upload throughput. It uses bounded parallel transfers so the result reflects the connection more realistically without making every normal diagnosis consume significant data.
+The separate, manually started speed test measures latency plus average and maximum observed download and upload throughput over an approximately 30-second measurement. Completed results are stored locally alongside diagnostics and configuration changes in the unified history.
 
 The diagnosis engine correlates results instead of treating every failed ping as an internet outage. For example, it can distinguish a DNS failure from a gateway failure, and it uses the web check to avoid classifying an ICMP-blocking network as completely offline.
 
@@ -26,10 +26,10 @@ The diagnosis engine correlates results instead of treating every failed ping as
 - Plain-language overall diagnosis and prioritized next steps
 - Evidence-based repair plans with per-step results and restart guidance
 - Expandable technical evidence for every check
-- Local diagnostic history with report review
+- Unified local history for diagnoses, speed tests, settings changes, and language switches
 - Privacy-aware HTML, JSON, and text export
 - Configurable endpoints, timeouts, sample count, and quality thresholds
-- Opt-in internet speed test with live progress, cancellation, and maximum/average Mbit/s results
+- Opt-in, approximately 30-second internet speed test with live progress, cancellation, maximum/average Mbit/s results, and local history
 - Diagnostics run without elevation; repairs are never automatic and may request UAC after confirmation
 - Keyboard navigation, high-contrast status text, and automation labels
 
@@ -57,8 +57,8 @@ This single command restores dependencies, builds all projects in Release mode, 
 The finished files are:
 
 - `artifacts\publish\win-x64\NetCheck.exe` — directly runnable application
-- `artifacts\NetCheck-1.0.0-win-x64.zip` — distributable package
-- `artifacts\NetCheck-1.0.0-win-x64.zip.sha256` — SHA-256 checksum
+- `artifacts\NetCheck-1.1.0-win-x64.zip` — distributable package
+- `artifacts\NetCheck-1.1.0-win-x64.zip.sha256` — SHA-256 checksum
 
 Start the locally built application with:
 
@@ -80,19 +80,20 @@ build.cmd -CollectCoverage
 
 NetCheck sends only the traffic required by its configured checks: DNS lookup, ICMP echo requests, and one lightweight HTTP connectivity request. The defaults are visible and editable in Settings.
 
-The speed test runs only when the user starts it. It transfers dynamically sized test data directly to and from Cloudflare's `speed.cloudflare.com` endpoints, with a hard combined cap of about 210 MB per run; slower connections usually use much less. NetCheck neither stores the speed-test result nor uploads it as telemetry. Wi-Fi conditions, VPNs, other traffic, the selected test endpoint, and provider congestion can all affect the measured maximum.
+The speed test runs only when the user starts it. It spreads five download rounds across 17 seconds and four upload rounds across 11 seconds, plus latency and preparation, for a total of roughly 30 seconds. Dynamically sized test data goes directly to and from Cloudflare's `speed.cloudflare.com` endpoints, with a hard combined cap of about 200 MB per run; slower connections usually use less. NetCheck stores the result only in its local history and does not upload it as NetCheck telemetry. Cloudflare receives the connection IP address as the speed-test endpoint operator. Wi-Fi conditions, VPNs, other traffic, the selected test endpoint, and provider congestion can all affect the measurement.
 
 The Fix workflow runs only after confirmation. It may renew DHCP, clear DNS or ARP caches, disable an identified current-user proxy, or reset Windows network components. NetCheck does not attempt to change physical connectivity, managed static addressing, captive portals, Wi-Fi signal quality, router configuration, or provider infrastructure.
 
 Local files are stored in `%LOCALAPPDATA%\NetCheck`:
 
 - `Reports\` — completed diagnostic history
+- `Activities\` — speed-test results and configuration-change history
 - `settings.json` — user preferences
 - `NetCheck.log` — created only when an application error is recorded
 
 Computer names are excluded from exports by default. Adapter MAC addresses are always redacted from exported reports. NetCheck does not upload reports or telemetry.
 
-See [Architecture](docs/ARCHITECTURE.md), [Security and privacy](SECURITY.md), and [Support guide](docs/SUPPORT.md) for details.
+See the [changelog](CHANGELOG.md), [architecture](docs/ARCHITECTURE.md), [security and privacy](SECURITY.md), and [support guide](docs/SUPPORT.md) for details.
 
 ## Repository structure
 

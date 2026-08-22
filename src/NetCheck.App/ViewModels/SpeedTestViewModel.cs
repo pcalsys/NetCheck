@@ -9,6 +9,7 @@ namespace NetCheck.App.ViewModels;
 public sealed class SpeedTestViewModel : ObservableObject
 {
     private readonly ISpeedTestService _speedTestService;
+    private readonly IActivityHistoryStore _activityHistoryStore;
     private readonly LocalizationService _text;
     private readonly FileLogger _logger;
     private CancellationTokenSource? _runCancellation;
@@ -21,10 +22,12 @@ public sealed class SpeedTestViewModel : ObservableObject
 
     public SpeedTestViewModel(
         ISpeedTestService speedTestService,
+        IActivityHistoryStore activityHistoryStore,
         LocalizationService text,
         FileLogger logger)
     {
         _speedTestService = speedTestService ?? throw new ArgumentNullException(nameof(speedTestService));
+        _activityHistoryStore = activityHistoryStore ?? throw new ArgumentNullException(nameof(activityHistoryStore));
         _text = text ?? throw new ArgumentNullException(nameof(text));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -161,6 +164,7 @@ public sealed class SpeedTestViewModel : ObservableObject
             Result = await _speedTestService
                 .RunAsync(progress, runCancellation.Token)
                 .ConfigureAwait(true);
+            await SaveResultToHistoryAsync(Result).ConfigureAwait(true);
             ProgressPercentage = 100;
             CurrentMegabitsPerSecond = 0;
             SetStatus("Speed test complete");
@@ -204,6 +208,24 @@ public sealed class SpeedTestViewModel : ObservableObject
     }
 
     private void Cancel() => _runCancellation?.Cancel();
+
+    private async Task SaveResultToHistoryAsync(SpeedTestResult result)
+    {
+        try
+        {
+            await _activityHistoryStore.SaveAsync(new ActivityHistoryEntry
+            {
+                OccurredAtUtc = result.CompletedAtUtc,
+                Kind = ActivityHistoryKind.SpeedTest,
+                SpeedTestResult = result
+            }).ConfigureAwait(true);
+        }
+        catch (Exception exception)
+        {
+            // A local history failure must not discard a successfully measured result.
+            _logger.Error("Could not save the speed-test result to local history.", exception);
+        }
+    }
 
     private void ApplyProgress(SpeedTestProgress progress)
     {

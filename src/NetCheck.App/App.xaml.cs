@@ -16,6 +16,7 @@ namespace NetCheck.App;
 public partial class App : Application
 {
     private JsonReportHistoryStore? _historyStore;
+    private JsonActivityHistoryStore? _activityHistoryStore;
     private JsonSettingsStore? _settingsStore;
     private FileLogger? _logger;
     private CloudflareSpeedTestService? _speedTestService;
@@ -37,6 +38,7 @@ public partial class App : Application
         var paths = new AppDataPaths();
         _logger = new FileLogger(paths.LogFile);
         _historyStore = new JsonReportHistoryStore(paths);
+        _activityHistoryStore = new JsonActivityHistoryStore(paths);
         _settingsStore = new JsonSettingsStore(paths);
         var localization = new LocalizationService();
         var initialSettings = await _settingsStore.LoadAsync().ConfigureAwait(true);
@@ -84,6 +86,7 @@ public partial class App : Application
             _logger);
         var history = new HistoryViewModel(
             _historyStore,
+            _activityHistoryStore,
             exporter,
             _settingsStore,
             dialogService,
@@ -91,14 +94,24 @@ public partial class App : Application
             localization,
             reportLocalization,
             _logger);
-        var speedTest = new SpeedTestViewModel(_speedTestService, localization, _logger);
-        var settings = new SettingsViewModel(_settingsStore, messageService, localization, _logger);
+        var speedTest = new SpeedTestViewModel(
+            _speedTestService,
+            _activityHistoryStore,
+            localization,
+            _logger);
+        var settings = new SettingsViewModel(
+            _settingsStore,
+            _activityHistoryStore,
+            messageService,
+            localization,
+            _logger);
         var mainViewModel = new MainViewModel(
             dashboard,
             speedTest,
             history,
             settings,
             _settingsStore,
+            _activityHistoryStore,
             localization,
             _logger);
 
@@ -113,6 +126,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _historyStore?.Dispose();
+        _activityHistoryStore?.Dispose();
         _settingsStore?.Dispose();
         _speedTestService?.Dispose();
         base.OnExit(e);

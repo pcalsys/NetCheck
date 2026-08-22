@@ -17,5 +17,5 @@ public sealed record DiagnosticReport
     public IReadOnlyList<DiagnosticCheckResult> Checks { get; init; } =
         Array.Empty<DiagnosticCheckResult>();
 
-    public string ApplicationVersion { get; init; } = "1.0.0";
+    public string ApplicationVersion { get; init; } = "1.1.0";
 }

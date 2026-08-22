@@ -107,6 +107,23 @@ public sealed class LocalizationServiceTests
         Assert.Contains("Nur für erfahrene Benutzer", ReadResourceValue(appDirectory, "Strings.de.xaml", "ExpertWarningTitle"));
     }
 
+    [Fact]
+    public void SpeedTestView_UsesOneWayBindingForReadOnlyProgress()
+    {
+        var root = FindRepositoryRoot();
+        var view = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "NetCheck.App",
+            "Views",
+            "SpeedTestView.xaml"));
+
+        Assert.Contains(
+            "Value=\"{Binding ProgressPercentage, Mode=OneWay}\"",
+            view,
+            StringComparison.Ordinal);
+    }
+
     private static DiagnosticReport CreateEnglishReport() => new()
     {
         Network = new NetworkSnapshot(),

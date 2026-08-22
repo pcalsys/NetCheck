@@ -11,10 +11,12 @@ public sealed class CloudflareSpeedTestServiceTests
     public async Task RunAsync_MeasuresAllPhasesAndHonorsConfiguredTrafficCaps()
     {
         var requests = new ConcurrentBag<(HttpMethod Method, int Bytes)>();
+        var versionPolicies = new ConcurrentBag<(Version Version, HttpVersionPolicy Policy)>();
         using var client = new HttpClient(new DelegateHandler(async (request, cancellationToken) =>
         {
             var bytes = ReadRequestedBytes(request.RequestUri!);
             requests.Add((request.Method, bytes));
+            versionPolicies.Add((request.Version, request.VersionPolicy));
             if (request.Method == HttpMethod.Post)
             {
                 var uploaded = await request.Content!.ReadAsByteArrayAsync(cancellationToken);
@@ -48,6 +50,11 @@ public sealed class CloudflareSpeedTestServiceTests
             requests.Count(item => item.Method == HttpMethod.Get));
         Assert.Equal(1 + options.UploadParallelism,
             requests.Count(item => item.Method == HttpMethod.Post));
+        Assert.All(versionPolicies, item =>
+        {
+            Assert.Equal(HttpVersion.Version20, item.Version);
+            Assert.Equal(HttpVersionPolicy.RequestVersionOrLower, item.Policy);
+        });
     }
 
     [Fact]

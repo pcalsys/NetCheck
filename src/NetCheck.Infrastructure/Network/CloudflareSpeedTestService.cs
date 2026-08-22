@@ -391,7 +391,7 @@ public sealed class CloudflareSpeedTestService : ISpeedTestService, IDisposable
         var request = new HttpRequestMessage(method, uri)
         {
             Version = HttpVersion.Version20,
-            VersionPolicy = HttpVersionPolicy.RequestVersionOrHigher
+            VersionPolicy = HttpVersionPolicy.RequestVersionOrLower
         };
         request.Headers.CacheControl = new CacheControlHeaderValue
         {

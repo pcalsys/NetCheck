@@ -51,7 +51,7 @@
                     <StackPanel Grid.Column="0" Margin="0,0,28,0">
                         <TextBlock Text="{DynamicResource CurrentMeasurement}" Style="{StaticResource MetricLabelStyle}" />
                         <TextBlock Text="{Binding StatusText}" FontSize="18" FontWeight="SemiBold" Margin="0,7,0,14" />
-                        <ProgressBar Value="{Binding ProgressPercentage}" Maximum="100" />
+                        <ProgressBar Value="{Binding ProgressPercentage, Mode=OneWay}" Maximum="100" />
                     </StackPanel>
                     <TextBlock Grid.Column="1"
                                Text="{Binding CurrentSpeedText}"

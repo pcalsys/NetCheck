@@ -44,38 +44,45 @@ The diagnosis engine correlates results instead of treating every failed ping as
 ## Requirements
 
 - A Microsoft-supported x64 Windows release: Windows 11, or a supported Windows 10 LTSC/Enterprise edition
-- .NET 10 SDK for development
+- Git and an internet connection for the first build
+
+No administrator rights, Visual Studio installation, or existing .NET SDK is required. The build launcher downloads the official .NET 10 SDK into the ignored `.dotnet` directory when a compatible, complete SDK is not already available. NuGet packages are restored automatically.
 
 Release builds are self-contained; end users do not need to install .NET. The application manifest and target platform retain Windows build 17763 as the technical minimum, but production use should remain on an operating-system release supported by Microsoft.
 
 ## Build and run
 
-From PowerShell:
+Clone the repository and run the checked-in launcher from Command Prompt or PowerShell:
 
-```powershell
-.\scripts\build.ps1
-.\.dotnet10\dotnet.exe run --project .\src\NetCheck.App\NetCheck.App.csproj
+```console
+git clone https://github.com/pcalsys/NetCheck.git
+cd NetCheck
+build.cmd
 ```
 
-If the repository-local SDK is not present, `build.ps1` uses `dotnet` from `PATH`.
+This single command restores dependencies, builds all projects in Release mode, runs all tests, and creates the self-contained Windows x64 application. It also bypasses a restrictive local PowerShell execution policy only for the checked-in build script.
 
-To build manually:
+The finished files are:
 
-```powershell
-dotnet restore .\NetCheck.sln
-dotnet build .\NetCheck.sln --configuration Debug --no-restore
-dotnet test .\NetCheck.sln --configuration Debug --no-build
+- `artifacts\publish\win-x64\NetCheck.exe` — directly runnable application
+- `artifacts\NetCheck-1.3.0-win-x64.zip` — distributable package
+- `artifacts\NetCheck-1.3.0-win-x64.zip.sha256` — SHA-256 checksum
+
+Start the locally built application with:
+
+```console
+artifacts\publish\win-x64\NetCheck.exe
 ```
 
-## Publish
+Useful developer options:
 
-Create a self-contained Windows x64 release and ZIP archive:
-
-```powershell
-.\scripts\publish.ps1
+```console
+build.cmd -SkipTests
+build.cmd -SkipPublish
+build.cmd -CollectCoverage
 ```
 
-Outputs are written under `artifacts\publish\win-x64` and `artifacts\NetCheck-1.3.0-win-x64.zip`.
+`-SkipTests` and `-SkipPublish` shorten local iteration. The default `build.cmd` path is the supported clean-clone and release build and is exercised by GitHub Actions on every push and pull request.
 
 ## Privacy and data
 
@@ -104,6 +111,8 @@ tests/
   NetCheck.Core.Tests/
   NetCheck.Infrastructure.Tests/
 scripts/
+  dotnet.ps1
   build.ps1
   publish.ps1
+build.cmd
 ```

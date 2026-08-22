@@ -2,6 +2,20 @@
 
 All notable changes to NetCheck are documented here.
 
+## Unreleased
+
+### Added
+
+- One-command `build.cmd` entry point for clean Windows clones
+- Automatic, non-administrative installation and integrity checking of the required .NET 10 SDK
+- Release ZIP and SHA-256 checksum generation as part of the default build
+
+### Changed
+
+- The default build now uses Release configuration, runs every test, and creates the self-contained Windows x64 executable
+- GitHub Actions exercises the same build entry point documented for contributors
+- Source-build documentation now lists the exact clone, build, output, and launch commands
+
 ## 1.3.0 — 2026-08-21
 
 ### Added

@@ -23,21 +23,16 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Restore
-        run: dotnet restore NetCheck.sln --property:Configuration=Release
-
-      - name: Build
-        run: dotnet build NetCheck.sln --configuration Release --no-restore --nologo
-
-      - name: Test
-        run: dotnet test NetCheck.sln --configuration Release --no-build --nologo --collect:"XPlat Code Coverage"
-
-      - name: Publish self-contained application
-        run: dotnet publish src/NetCheck.App/NetCheck.App.csproj --configuration Release --runtime win-x64 --self-contained true --no-build --output artifacts/publish/win-x64 --nologo
+      - name: Build, test, and package
+        shell: cmd
+        run: build.cmd -CollectCoverage
 
       - name: Upload application
         uses: actions/upload-artifact@v7
         with:
           name: NetCheck-win-x64
-          path: artifacts/publish/win-x64
+          path: |
+            artifacts/publish/win-x64
+            artifacts/NetCheck-*-win-x64.zip
+            artifacts/NetCheck-*-win-x64.zip.sha256
           if-no-files-found: error

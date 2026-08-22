@@ -1,10 +1,49 @@
 [CmdletBinding()]
 param(
     [string]$Version,
-    [string]$DotNetPath
+    [string]$DotNetPath,
+    [switch]$CopyToDownloads
 )
 
 $ErrorActionPreference = 'Stop'
+
+function Get-NetCheckDownloadsDirectory {
+    [CmdletBinding()]
+    param()
+
+    $downloadsKnownFolderId = '{374DE290-123F-4565-9164-39C4925E467B}'
+    $userShellFoldersPath =
+        'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders'
+    $downloadsPath = $null
+
+    try {
+        $userShellFolders = Get-Item -LiteralPath $userShellFoldersPath -ErrorAction Stop
+        $downloadsPath = [string]$userShellFolders.GetValue(
+            $downloadsKnownFolderId,
+            $null,
+            [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+    } catch {
+        # Fall back to the standard profile location when the known-folder entry is unavailable.
+    }
+
+    if ([string]::IsNullOrWhiteSpace($downloadsPath)) {
+        $userProfile = [Environment]::GetFolderPath(
+            [Environment+SpecialFolder]::UserProfile)
+        if ([string]::IsNullOrWhiteSpace($userProfile)) {
+            throw 'The Windows user profile directory could not be resolved.'
+        }
+        $downloadsPath = Join-Path $userProfile 'Downloads'
+    } else {
+        $downloadsPath = [Environment]::ExpandEnvironmentVariables($downloadsPath)
+    }
+
+    if (-not [IO.Path]::IsPathRooted($downloadsPath)) {
+        throw "The Windows Downloads directory is not an absolute path: $downloadsPath"
+    }
+
+    return [IO.Path]::GetFullPath($downloadsPath)
+}
+
 $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $project = Join-Path $repositoryRoot 'src\NetCheck.App\NetCheck.App.csproj'
 . (Join-Path $PSScriptRoot 'dotnet.ps1')
@@ -82,6 +121,64 @@ $checksumFile = "$archive.sha256"
     "$hash  $([IO.Path]::GetFileName($archive))",
     [Text.Encoding]::ASCII)
 
+$downloadsExecutable = $null
+if ($CopyToDownloads) {
+    $downloadsDirectory = Get-NetCheckDownloadsDirectory
+    [IO.Directory]::CreateDirectory($downloadsDirectory) | Out-Null
+
+    $downloadsPackageDirectory = Join-Path $downloadsDirectory "NetCheck-$Version"
+    try {
+        [IO.Directory]::CreateDirectory($downloadsPackageDirectory) | Out-Null
+        Copy-Item -LiteralPath $executable `
+            -Destination (Join-Path $downloadsPackageDirectory 'NetCheck.exe') `
+            -Force
+        Copy-Item -LiteralPath (Join-Path $publishDirectory 'LICENSE.txt') `
+            -Destination (Join-Path $downloadsPackageDirectory 'LICENSE.txt') `
+            -Force
+    } catch {
+        $fallbackName = "NetCheck-$Version-$([DateTime]::Now.ToString('yyyyMMdd-HHmmss'))"
+        $downloadsPackageDirectory = Join-Path $downloadsDirectory $fallbackName
+        Write-Warning "The existing Downloads copy could not be updated. Using $downloadsPackageDirectory instead."
+        [IO.Directory]::CreateDirectory($downloadsPackageDirectory) | Out-Null
+        Copy-Item -LiteralPath $executable `
+            -Destination (Join-Path $downloadsPackageDirectory 'NetCheck.exe') `
+            -Force
+        Copy-Item -LiteralPath (Join-Path $publishDirectory 'LICENSE.txt') `
+            -Destination (Join-Path $downloadsPackageDirectory 'LICENSE.txt') `
+            -Force
+    }
+
+    $downloadsExecutable = Join-Path $downloadsPackageDirectory 'NetCheck.exe'
+    $publishedExecutableHash = (Get-FileHash -LiteralPath $executable -Algorithm SHA256).Hash
+    $downloadsExecutableHash =
+        (Get-FileHash -LiteralPath $downloadsExecutable -Algorithm SHA256).Hash
+    if ($publishedExecutableHash -ne $downloadsExecutableHash) {
+        throw "The Downloads copy does not match the published executable: $downloadsExecutable"
+    }
+}
+
 Write-Host "Published NetCheck to $publishDirectory" -ForegroundColor Green
 Write-Host "Created $archive" -ForegroundColor Green
 Write-Host "SHA-256 $hash" -ForegroundColor Green
+Write-Host
+Write-Host '============================================================' -ForegroundColor Green
+Write-Host ' NETCHECK IS READY / NETCHECK IST FERTIG' -ForegroundColor Green
+Write-Host '============================================================' -ForegroundColor Green
+if ($null -ne $downloadsExecutable) {
+    Write-Host 'The start-ready application is in your Downloads folder:'
+    Write-Host "  $downloadsExecutable" -ForegroundColor Cyan
+    Write-Host 'Open that folder and double-click NetCheck.exe.'
+} else {
+    Write-Host 'The start-ready application is here:'
+    Write-Host "  $executable" -ForegroundColor Cyan
+}
+Write-Host '============================================================' -ForegroundColor Green
+
+if ($null -ne $downloadsExecutable) {
+    try {
+        $explorerArguments = '"{0}"' -f $downloadsPackageDirectory
+        Start-Process -FilePath 'explorer.exe' -ArgumentList $explorerArguments
+    } catch {
+        Write-Warning "Downloads could not be opened automatically. Open this file manually: $downloadsExecutable"
+    }
+}

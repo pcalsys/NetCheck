@@ -4,6 +4,7 @@ param(
     [string]$Configuration = 'Release',
     [switch]$SkipTests,
     [switch]$SkipPublish,
+    [switch]$SkipDownloadsCopy,
     [switch]$CollectCoverage
 )
 
@@ -41,7 +42,16 @@ if (-not $SkipTests) {
 }
 
 if ($Configuration -eq 'Release' -and -not $SkipPublish) {
-    & (Join-Path $PSScriptRoot 'publish.ps1') -DotNetPath $dotnet
+    $isContinuousIntegration =
+        [string]::Equals($env:CI, 'true', [StringComparison]::OrdinalIgnoreCase)
+    $publishArguments = @{
+        DotNetPath = $dotnet
+    }
+    if (-not $SkipDownloadsCopy -and -not $isContinuousIntegration) {
+        $publishArguments.CopyToDownloads = $true
+    }
+
+    & (Join-Path $PSScriptRoot 'publish.ps1') @publishArguments
 }
 
 Write-Host "NetCheck $Configuration build completed successfully." -ForegroundColor Green

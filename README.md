@@ -58,6 +58,8 @@ This single command restores dependencies, builds all projects in Release mode, 
 
 On a computer without a compatible .NET SDK, the first build downloads the official SDK into `.dotnet` and shows live progress from 0% to 100% in the command window before extraction begins.
 
+After a successful local Release build, a start-ready copy is also placed in the current user's Windows Downloads folder under `NetCheck-1.1.0\NetCheck.exe`. The command window prints the complete path in a prominent completion message, and File Explorer opens the containing folder. Continuous-integration builds do not create or open this personal Downloads copy.
+
 The finished files are:
 
 - `artifacts\publish\win-x64\NetCheck.exe` — directly runnable application
@@ -75,10 +77,11 @@ Useful developer options:
 ```console
 build.cmd -SkipTests
 build.cmd -SkipPublish
+build.cmd -SkipDownloadsCopy
 build.cmd -CollectCoverage
 ```
 
-`-SkipTests` and `-SkipPublish` shorten local iteration. The default `build.cmd` path is the supported clean-clone and release build and is exercised by GitHub Actions on every push and pull request.
+`-SkipTests` and `-SkipPublish` shorten local iteration. `-SkipDownloadsCopy` keeps the start-ready files only under `artifacts`. The default `build.cmd` path is the supported clean-clone and release build and is exercised by GitHub Actions on every push and pull request.
 
 ## Privacy and data
 

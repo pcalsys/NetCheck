@@ -18,6 +18,7 @@ public partial class App : Application
     private JsonReportHistoryStore? _historyStore;
     private JsonSettingsStore? _settingsStore;
     private FileLogger? _logger;
+    private CloudflareSpeedTestService? _speedTestService;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -67,6 +68,7 @@ public partial class App : Application
         var repairService = new WindowsNetworkRepairService();
         var dialogService = new FileDialogService(localization);
         var messageService = new MessageService();
+        _speedTestService = new CloudflareSpeedTestService();
 
         var dashboard = new DashboardViewModel(
             engine,
@@ -89,9 +91,11 @@ public partial class App : Application
             localization,
             reportLocalization,
             _logger);
+        var speedTest = new SpeedTestViewModel(_speedTestService, localization, _logger);
         var settings = new SettingsViewModel(_settingsStore, messageService, localization, _logger);
         var mainViewModel = new MainViewModel(
             dashboard,
+            speedTest,
             history,
             settings,
             _settingsStore,
@@ -110,6 +114,7 @@ public partial class App : Application
     {
         _historyStore?.Dispose();
         _settingsStore?.Dispose();
+        _speedTestService?.Dispose();
         base.OnExit(e);
     }
 

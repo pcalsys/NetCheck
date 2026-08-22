@@ -16,6 +16,8 @@ The default assessment may contact:
 - `1.1.1.1` and `8.8.8.8` using ICMP echo until one responds
 - `http://www.msftconnecttest.com/connecttest.txt` using HTTP
 
+The optional speed test contacts `https://speed.cloudflare.com/__down` and `https://speed.cloudflare.com/__up` only after the user starts it. It uses cache-bypassed, bounded transfers with a combined cap of about 210 MB. NetCheck displays both average throughput and the fastest sustained sample, does not persist the result, and sends no report or NetCheck telemetry with the test. The endpoint operator still receives the ordinary network metadata inherent in any HTTPS request, such as the public IP address.
+
 Targets are editable. The connectivity endpoint intentionally uses HTTP so NetCheck can observe captive-portal redirects; response reading is capped at 1,024 characters. NetCheck sends no diagnostic report, unique identifier, account information, or usage telemetry.
 
 ## Stored data

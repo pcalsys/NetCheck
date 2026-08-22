@@ -20,6 +20,10 @@ Open a browser and complete the network sign-in flow, then rerun NetCheck. Hotel
 
 Do not disable organization-managed proxies, VPNs, firewalls, or DNS settings without approval. Export a report and share it with the network administrator. Computer names are excluded by default and MAC addresses are always redacted; still review a report before sharing it outside the organization.
 
+## Speed-test results look too low
+
+Pause downloads, cloud backups, streaming, and VPN traffic, then compare another run. Test over Ethernet when possible because Wi-Fi signal, channel congestion, power-saving behavior, and other devices share the available capacity. The displayed maximum is the fastest sustained sample NetCheck observed during this run, not a guaranteed provider line rate. The test contacts Cloudflare and can use up to about 210 MB, so do not run it on a metered connection unless that data use is acceptable.
+
 ## Fix detected issues
 
 When NetCheck can safely associate a failed check with a supported Windows repair, the dashboard shows **Fix issue**. Review the complete plan before choosing Yes. Windows may request administrator approval for DHCP, cache, Winsock, or TCP/IP repairs.

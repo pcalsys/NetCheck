@@ -15,6 +15,8 @@ NetCheck is a native Windows desktop application that explains *why* a computer 
 | Connection stability | Short-sample packet loss, average latency, and jitter |
 | Proxy configuration | Whether a user proxy may explain a failed web check |
 
+The separate, manually started speed test measures latency plus average and maximum observed download and upload throughput. It uses bounded parallel transfers so the result reflects the connection more realistically without making every normal diagnosis consume significant data.
+
 The diagnosis engine correlates results instead of treating every failed ping as an internet outage. For example, it can distinguish a DNS failure from a gateway failure, and it uses the web check to avoid classifying an ICMP-blocking network as completely offline.
 
 ## User experience
@@ -27,6 +29,7 @@ The diagnosis engine correlates results instead of treating every failed ping as
 - Local diagnostic history with report review
 - Privacy-aware HTML, JSON, and text export
 - Configurable endpoints, timeouts, sample count, and quality thresholds
+- Opt-in internet speed test with live progress, cancellation, and maximum/average Mbit/s results
 - Diagnostics run without elevation; repairs are never automatic and may request UAC after confirmation
 - Keyboard navigation, high-contrast status text, and automation labels
 
@@ -76,6 +79,8 @@ build.cmd -CollectCoverage
 ## Privacy and data
 
 NetCheck sends only the traffic required by its configured checks: DNS lookup, ICMP echo requests, and one lightweight HTTP connectivity request. The defaults are visible and editable in Settings.
+
+The speed test runs only when the user starts it. It transfers dynamically sized test data directly to and from Cloudflare's `speed.cloudflare.com` endpoints, with a hard combined cap of about 210 MB per run; slower connections usually use much less. NetCheck neither stores the speed-test result nor uploads it as telemetry. Wi-Fi conditions, VPNs, other traffic, the selected test endpoint, and provider congestion can all affect the measured maximum.
 
 The Fix workflow runs only after confirmation. It may renew DHCP, clear DNS or ARP caches, disable an identified current-user proxy, or reset Windows network components. NetCheck does not attempt to change physical connectivity, managed static addressing, captive portals, Wi-Fi signal quality, router configuration, or provider infrastructure.
 

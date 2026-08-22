@@ -42,6 +42,19 @@
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource SidebarButtonStyle}"
+                            Command="{Binding ShowSpeedTestCommand}"
+                            Tag="{Binding IsSpeedTestSelected}"
+                            AutomationProperties.Name="{DynamicResource SpeedTestAutomationName}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE9D9;" FontFamily="{StaticResource IconFont}" FontSize="17" Width="30"
+                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                       TextWrapping="NoWrap" />
+                            <TextBlock Text="{Binding SpeedTestMenuLabel}"
+                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource SidebarButtonStyle}"
                             Command="{Binding ShowHistoryCommand}"
                             Tag="{Binding IsHistorySelected}"
                             AutomationProperties.Name="{DynamicResource HistoryAutomationName}">

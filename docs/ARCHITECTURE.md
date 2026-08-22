@@ -28,7 +28,7 @@ NetCheck.Core ◄── NetCheck.Infrastructure
 
 ## Presentation and localization
 
-The WPF shell uses MVVM navigation and a shared resource dictionary for the visual system. Dashboard, history, and settings views contain only presentation bindings; diagnostic behavior remains in Core and Infrastructure.
+The WPF shell uses MVVM navigation and a shared resource dictionary for the visual system. Dashboard, speed test, history, and settings views contain only presentation bindings; diagnostic behavior remains in Core and Infrastructure.
 
 Matched English and German resource dictionaries provide the complete static interface. Diagnostic reports remain language-neutral in storage, while an application-layer projection localizes diagnoses, technical evidence, repair plans, history, dialogs, and exports. This allows an existing report to be re-rendered immediately after a language switch without coupling diagnostic or repair rules to presentation language.
 
@@ -39,6 +39,10 @@ The normalized `en` or `de` preference is stored with the local application sett
 The engine captures a single network snapshot, orders checks by their declared stage, and publishes start/completion progress for each check. Results are added to a shared diagnostic context so later checks can make safe dependency decisions. For example, gateway and DNS checks skip when no usable local adapter exists, and stability sampling only runs against a public target that already replied.
 
 Every probe executes inside an exception boundary. Cancellation returns a partial report with an explicit `Cancelled` outcome. An unexpected probe exception becomes a warning result with error evidence, while later probes continue.
+
+## Speed-test execution
+
+The manually started speed test is independent from the read-only diagnostic pipeline. `ISpeedTestService` and its progress/result models live in Core; the Cloudflare HTTP implementation lives in Infrastructure; the WPF view model owns cancellation, localization, and presentation state. A short probe sizes each bounded parallel transfer, avoiding a fixed large download on slow links while retaining enough data to sample faster links. Throughput is calculated from monotonic elapsed time and transferred bytes. Results distinguish full-transfer average throughput from the fastest sustained sampling interval and are not persisted.
 
 ## Root-cause analysis
 

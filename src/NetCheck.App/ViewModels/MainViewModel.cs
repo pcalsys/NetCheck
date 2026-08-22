@@ -8,6 +8,7 @@ namespace NetCheck.App.ViewModels;
 public sealed class MainViewModel : ObservableObject
 {
     private readonly DashboardViewModel _dashboard;
+    private readonly SpeedTestViewModel _speedTest;
     private readonly HistoryViewModel _history;
     private readonly SettingsViewModel _settings;
     private readonly ISettingsStore _settingsStore;
@@ -19,6 +20,7 @@ public sealed class MainViewModel : ObservableObject
 
     public MainViewModel(
         DashboardViewModel dashboard,
+        SpeedTestViewModel speedTest,
         HistoryViewModel history,
         SettingsViewModel settings,
         ISettingsStore settingsStore,
@@ -26,6 +28,7 @@ public sealed class MainViewModel : ObservableObject
         FileLogger logger)
     {
         _dashboard = dashboard ?? throw new ArgumentNullException(nameof(dashboard));
+        _speedTest = speedTest ?? throw new ArgumentNullException(nameof(speedTest));
         _history = history ?? throw new ArgumentNullException(nameof(history));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
@@ -34,6 +37,7 @@ public sealed class MainViewModel : ObservableObject
         _currentPage = dashboard;
 
         ShowDashboardCommand = new RelayCommand(ShowDashboard);
+        ShowSpeedTestCommand = new RelayCommand(ShowSpeedTest);
         ShowHistoryCommand = new AsyncRelayCommand(ShowHistoryAsync);
         ShowSettingsCommand = new AsyncRelayCommand(ShowSettingsAsync);
         UseEnglishMenuCommand = new AsyncRelayCommand(() => SetMenuLanguageAsync("en"));
@@ -41,6 +45,8 @@ public sealed class MainViewModel : ObservableObject
     }
 
     public RelayCommand ShowDashboardCommand { get; }
+
+    public RelayCommand ShowSpeedTestCommand { get; }
 
     public AsyncRelayCommand ShowHistoryCommand { get; }
 
@@ -60,10 +66,13 @@ public sealed class MainViewModel : ObservableObject
     {
         MainPage.History => _text.Translate("History"),
         MainPage.Settings => _text.Translate("Settings"),
+        MainPage.SpeedTest => _text.Translate("Speed test"),
         _ => _text.Translate("Dashboard")
     };
 
     public string DashboardMenuLabel => _text.Translate("Dashboard");
+
+    public string SpeedTestMenuLabel => _text.Translate("Speed test");
 
     public string HistoryMenuLabel => _text.Translate("History");
 
@@ -76,6 +85,8 @@ public sealed class MainViewModel : ObservableObject
     public string CurrentLanguageTag => _text.Culture.IetfLanguageTag;
 
     public bool IsDashboardSelected => _selectedPage == MainPage.Dashboard;
+
+    public bool IsSpeedTestSelected => _selectedPage == MainPage.SpeedTest;
 
     public bool IsHistorySelected => _selectedPage == MainPage.History;
 
@@ -96,6 +107,12 @@ public sealed class MainViewModel : ObservableObject
     {
         CurrentPage = _dashboard;
         SelectPage(MainPage.Dashboard);
+    }
+
+    private void ShowSpeedTest()
+    {
+        CurrentPage = _speedTest;
+        SelectPage(MainPage.SpeedTest);
     }
 
     private async Task ShowHistoryAsync()
@@ -139,11 +156,13 @@ public sealed class MainViewModel : ObservableObject
         _menuLanguage = string.Equals(language, "de", StringComparison.OrdinalIgnoreCase) ? "de" : "en";
         _text.SetLanguage(_menuLanguage);
         _dashboard.RefreshLocalization();
+        _speedTest.RefreshLocalization();
         _history.RefreshLocalization();
         _settings.RefreshLocalization();
         OnPropertiesChanged(
             nameof(CurrentPageName),
             nameof(DashboardMenuLabel),
+            nameof(SpeedTestMenuLabel),
             nameof(HistoryMenuLabel),
             nameof(SettingsMenuLabel),
             nameof(MenuLanguageLabel),
@@ -159,6 +178,7 @@ public sealed class MainViewModel : ObservableObject
         OnPropertiesChanged(
             nameof(CurrentPageName),
             nameof(IsDashboardSelected),
+            nameof(IsSpeedTestSelected),
             nameof(IsHistorySelected),
             nameof(IsSettingsSelected));
     }
@@ -166,6 +186,7 @@ public sealed class MainViewModel : ObservableObject
     private enum MainPage
     {
         Dashboard,
+        SpeedTest,
         History,
         Settings
     }

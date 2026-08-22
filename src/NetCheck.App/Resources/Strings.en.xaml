@@ -4,12 +4,35 @@
     <sys:String x:Key="WindowTitle">NetCheck · Network diagnostics</sys:String>
     <sys:String x:Key="NavigationLabel">NAVIGATION</sys:String>
     <sys:String x:Key="DashboardMenu">Dashboard</sys:String>
+    <sys:String x:Key="SpeedTestMenu">Speed test</sys:String>
     <sys:String x:Key="HistoryMenu">History</sys:String>
     <sys:String x:Key="SettingsMenu">Settings</sys:String>
     <sys:String x:Key="MenuLanguage">LANGUAGE</sys:String>
     <sys:String x:Key="UseEnglishMenuAutomation">Use English</sys:String>
     <sys:String x:Key="UseGermanMenuAutomation">Use German</sys:String>
     <sys:String x:Key="CreatorCredit">created by pcalsys</sys:String>
+
+    <sys:String x:Key="SpeedTestAutomationName">Internet speed test</sys:String>
+    <sys:String x:Key="SpeedTestEyebrow">CONNECTION PERFORMANCE</sys:String>
+    <sys:String x:Key="SpeedTestTitle">How fast is this connection?</sys:String>
+    <sys:String x:Key="SpeedTestSubtitle">Measure the maximum observed download and upload speed, average throughput, and latency.</sys:String>
+    <sys:String x:Key="StartSpeedTest">Start speed test</sys:String>
+    <sys:String x:Key="CurrentMeasurement">CURRENT MEASUREMENT</sys:String>
+    <sys:String x:Key="MeasuredSpeedTitle">Your measured speed</sys:String>
+    <sys:String x:Key="MeasuredSpeedSubtitle">Maximum is the fastest sustained sample observed during this run; average is the rate across the complete transfer.</sys:String>
+    <sys:String x:Key="MaximumDownloadMetric">MAXIMUM DOWNLOAD</sys:String>
+    <sys:String x:Key="AverageDownloadMetric">AVERAGE DOWNLOAD</sys:String>
+    <sys:String x:Key="MaximumUploadMetric">MAXIMUM UPLOAD</sys:String>
+    <sys:String x:Key="AverageUploadMetric">AVERAGE UPLOAD</sys:String>
+    <sys:String x:Key="LatencyMetric">LATENCY</sys:String>
+    <sys:String x:Key="TestDurationMetric">TEST DURATION</sys:String>
+    <sys:String x:Key="TransferredDataMetric">TRANSFERRED DATA</sys:String>
+    <sys:String x:Key="SpeedTestAccuracyTitle">For a useful result</sys:String>
+    <sys:String x:Key="SpeedTestAccuracyText">Pause downloads and VPN traffic. Ethernet gives the clearest comparison; Wi-Fi and other devices affect the result.</sys:String>
+    <sys:String x:Key="SpeedTestDataTitle">Controlled data use</sys:String>
+    <sys:String x:Key="SpeedTestDataText">The test transfers up to about 210 MB through Cloudflare. Actual use adapts to your speed and is usually lower.</sys:String>
+    <sys:String x:Key="SpeedTestPrivacyTitle">Private in NetCheck</sys:String>
+    <sys:String x:Key="SpeedTestPrivacyText">NetCheck does not save or upload the result. Test traffic goes directly to Cloudflare's speed-test endpoints.</sys:String>
 
     <sys:String x:Key="DashboardAutomationName">Network diagnostics dashboard</sys:String>
     <sys:String x:Key="DashboardEyebrow">CONNECTION HEALTH</sys:String>

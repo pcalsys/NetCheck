@@ -1,0 +1,175 @@
+<UserControl x:Class="NetCheck.App.Views.SpeedTestView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             AutomationProperties.Name="{DynamicResource SpeedTestAutomationName}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="34,30,34,38" MaxWidth="1040" HorizontalAlignment="Stretch">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Style="{StaticResource CardStyle}" Padding="28">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,28,0">
+                        <TextBlock Text="{DynamicResource SpeedTestEyebrow}" Style="{StaticResource PageEyebrowStyle}" />
+                        <TextBlock Text="{DynamicResource SpeedTestTitle}" Style="{StaticResource PageTitleStyle}" Margin="0,7,0,8" />
+                        <TextBlock Text="{DynamicResource SpeedTestSubtitle}" Style="{StaticResource MutedTextStyle}" MaxWidth="670" HorizontalAlignment="Left" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <Button Content="{DynamicResource StartSpeedTest}"
+                                Command="{Binding RunCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                MinWidth="148"
+                                AutomationProperties.Name="{DynamicResource StartSpeedTest}" />
+                        <Button Content="{DynamicResource Cancel}"
+                                Command="{Binding CancelCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Margin="0,9,0,0"
+                                MinWidth="148"
+                                Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                AutomationProperties.Name="{DynamicResource Cancel}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="1"
+                    Style="{StaticResource CardStyle}"
+                    Margin="0,18,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,28,0">
+                        <TextBlock Text="{DynamicResource CurrentMeasurement}" Style="{StaticResource MetricLabelStyle}" />
+                        <TextBlock Text="{Binding StatusText}" FontSize="18" FontWeight="SemiBold" Margin="0,7,0,14" />
+                        <ProgressBar Value="{Binding ProgressPercentage}" Maximum="100" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding CurrentSpeedText}"
+                               FontFamily="{StaticResource DisplayFont}"
+                               FontSize="25"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource PrimaryBrush}"
+                               VerticalAlignment="Center"
+                               AutomationProperties.LiveSetting="Polite" />
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Background="#FFF3F5"
+                    BorderBrush="#F4C7CF"
+                    BorderThickness="1"
+                    CornerRadius="13"
+                    Padding="17"
+                    Margin="0,18,0,0"
+                    Visibility="{Binding ErrorMessage, Converter={StaticResource NonEmptyStringToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xEA39;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource DangerBrush}"
+                               FontSize="17" Margin="0,1,11,0" />
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" FontWeight="SemiBold"
+                               VerticalAlignment="Center" AutomationProperties.LiveSetting="Assertive" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Row="3"
+                        Margin="0,25,0,0"
+                        Visibility="{Binding HasResult, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="{DynamicResource MeasuredSpeedTitle}" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,4" />
+                <TextBlock Text="{DynamicResource MeasuredSpeedSubtitle}" Style="{StaticResource MutedTextStyle}" Margin="0,0,0,15" />
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Style="{StaticResource CardStyle}" Background="{StaticResource PrimarySoftBrush}" BorderThickness="0">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource MaximumDownloadMetric}" Style="{StaticResource MetricLabelStyle}" Foreground="{StaticResource PrimaryBrush}" />
+                            <TextBlock Text="{Binding PeakDownloadText}" FontFamily="{StaticResource DisplayFont}" FontSize="31"
+                                       FontWeight="SemiBold" Foreground="{StaticResource PrimaryBrush}" Margin="0,8,0,13" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{DynamicResource AverageDownloadMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                    <TextBlock Text="{Binding AverageDownloadText}" FontSize="16" FontWeight="SemiBold" Margin="0,5,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{DynamicResource LatencyMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                    <TextBlock Text="{Binding LatencyText}" FontSize="16" FontWeight="SemiBold" Margin="0,5,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource MaximumUploadMetric}" Style="{StaticResource MetricLabelStyle}" Foreground="{StaticResource AccentBrush}" />
+                            <TextBlock Text="{Binding PeakUploadText}" FontFamily="{StaticResource DisplayFont}" FontSize="31"
+                                       FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" Margin="0,8,0,13" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{DynamicResource AverageUploadMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                    <TextBlock Text="{Binding AverageUploadText}" FontSize="15" FontWeight="SemiBold" Margin="0,5,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{DynamicResource TestDurationMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                    <TextBlock Text="{Binding DurationText}" FontSize="15" FontWeight="SemiBold" Margin="0,5,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="{DynamicResource TransferredDataMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                    <TextBlock Text="{Binding DataUsedText}" FontSize="15" FontWeight="SemiBold" Margin="0,5,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </StackPanel>
+
+            <Grid Grid.Row="4" Margin="0,20,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Style="{StaticResource SoftCardStyle}" Padding="18">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource SpeedTestAccuracyTitle}" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,7" />
+                        <TextBlock Text="{DynamicResource SpeedTestAccuracyText}" Style="{StaticResource MutedTextStyle}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource SoftCardStyle}" Padding="18">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource SpeedTestDataTitle}" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,7" />
+                        <TextBlock Text="{DynamicResource SpeedTestDataText}" Style="{StaticResource MutedTextStyle}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="4" Style="{StaticResource SoftCardStyle}" Padding="18">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource SpeedTestPrivacyTitle}" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,7" />
+                        <TextBlock Text="{DynamicResource SpeedTestPrivacyText}" Style="{StaticResource MutedTextStyle}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

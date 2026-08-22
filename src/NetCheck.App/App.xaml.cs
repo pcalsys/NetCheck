@@ -5,11 +5,14 @@ using NetCheck.App.Services;
 using NetCheck.App.ViewModels;
 using NetCheck.Core.Abstractions;
 using NetCheck.Core.Diagnostics;
+using NetCheck.Core.Monitoring;
 using NetCheck.Infrastructure.Diagnostics;
 using NetCheck.Infrastructure.Export;
 using NetCheck.Infrastructure.Logging;
 using NetCheck.Infrastructure.Network;
 using NetCheck.Infrastructure.Storage;
+using NetCheck.Infrastructure.Support;
+using NetCheck.Infrastructure.Updates;
 
 namespace NetCheck.App;
 
@@ -17,9 +20,12 @@ public partial class App : Application
 {
     private JsonReportHistoryStore? _historyStore;
     private JsonActivityHistoryStore? _activityHistoryStore;
+    private JsonMonitoringHistoryStore? _monitoringHistoryStore;
     private JsonSettingsStore? _settingsStore;
     private FileLogger? _logger;
     private CloudflareSpeedTestService? _speedTestService;
+    private WindowsNetworkMonitoringProbe? _monitoringProbe;
+    private GitHubUpdateService? _updateService;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -39,6 +45,7 @@ public partial class App : Application
         _logger = new FileLogger(paths.LogFile);
         _historyStore = new JsonReportHistoryStore(paths);
         _activityHistoryStore = new JsonActivityHistoryStore(paths);
+        _monitoringHistoryStore = new JsonMonitoringHistoryStore(paths);
         _settingsStore = new JsonSettingsStore(paths);
         var localization = new LocalizationService();
         var initialSettings = await _settingsStore.LoadAsync().ConfigureAwait(true);
@@ -70,7 +77,12 @@ public partial class App : Application
         var repairService = new WindowsNetworkRepairService();
         var dialogService = new FileDialogService(localization);
         var messageService = new MessageService();
+        var notificationService = new NotificationService();
         _speedTestService = new CloudflareSpeedTestService();
+        _monitoringProbe = new WindowsNetworkMonitoringProbe();
+        _updateService = new GitHubUpdateService();
+        var monitoringService = new MonitoringService(_monitoringProbe);
+        var supportBundleService = new SupportBundleService(paths);
 
         var dashboard = new DashboardViewModel(
             engine,
@@ -87,6 +99,7 @@ public partial class App : Application
         var history = new HistoryViewModel(
             _historyStore,
             _activityHistoryStore,
+            _monitoringHistoryStore,
             exporter,
             _settingsStore,
             dialogService,
@@ -99,6 +112,16 @@ public partial class App : Application
             _activityHistoryStore,
             localization,
             _logger);
+        var monitoring = new MonitoringViewModel(
+            monitoringService,
+            _monitoringHistoryStore,
+            supportBundleService,
+            _updateService,
+            dialogService,
+            messageService,
+            notificationService,
+            localization,
+            _logger);
         var settings = new SettingsViewModel(
             _settingsStore,
             _activityHistoryStore,
@@ -108,10 +131,12 @@ public partial class App : Application
         var mainViewModel = new MainViewModel(
             dashboard,
             speedTest,
+            monitoring,
             history,
             settings,
             _settingsStore,
             _activityHistoryStore,
+            notificationService,
             localization,
             _logger);
 
@@ -127,8 +152,11 @@ public partial class App : Application
     {
         _historyStore?.Dispose();
         _activityHistoryStore?.Dispose();
+        _monitoringHistoryStore?.Dispose();
         _settingsStore?.Dispose();
         _speedTestService?.Dispose();
+        _monitoringProbe?.Dispose();
+        _updateService?.Dispose();
         base.OnExit(e);
     }
 

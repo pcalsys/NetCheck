@@ -13,13 +13,15 @@ public sealed class HistoryItemViewModel
         DateTimeOffset occurredAtUtc,
         LocalizationService text,
         DiagnosticReport? report,
-        ActivityHistoryEntry? activity)
+        ActivityHistoryEntry? activity,
+        MonitoringSession? monitoringSession)
     {
         Id = id;
         OccurredAtUtc = occurredAtUtc;
         _text = text;
         Report = report;
         Activity = activity;
+        MonitoringSession = monitoringSession;
         ChangedSettings = activity?.SettingChanges
             .Select(change => new SettingChangeViewModel(
                 GetSettingLabel(change.SettingName),
@@ -36,6 +38,8 @@ public sealed class HistoryItemViewModel
 
     public ActivityHistoryEntry? Activity { get; }
 
+    public MonitoringSession? MonitoringSession { get; }
+
     public SpeedTestResult? SpeedTestResult => Activity?.SpeedTestResult;
 
     public IReadOnlyList<SettingChangeViewModel> ChangedSettings { get; }
@@ -47,15 +51,23 @@ public sealed class HistoryItemViewModel
     public bool IsConfigurationChange => Activity?.Kind is
         ActivityHistoryKind.SettingsChanged or ActivityHistoryKind.LanguageChanged;
 
+    public bool IsMonitoring => MonitoringSession is not null;
+
     public bool CanExport => IsDiagnostic;
 
-    public DiagnosticOutcome Outcome => Report?.Diagnosis.Outcome ?? DiagnosticOutcome.Healthy;
+    public DiagnosticOutcome Outcome => MonitoringSession switch
+    {
+        { Summary.AvailabilityPercent: < 90 } => DiagnosticOutcome.Problem,
+        { Summary.AvailabilityPercent: < 99.5 } => DiagnosticOutcome.Attention,
+        _ => Report?.Diagnosis.Outcome ?? DiagnosticOutcome.Healthy
+    };
 
     public string BadgeLabel => Activity?.Kind switch
     {
         ActivityHistoryKind.SpeedTest => _text.Translate("SPEED TEST"),
         ActivityHistoryKind.SettingsChanged => _text.Translate("SETTINGS"),
         ActivityHistoryKind.LanguageChanged => _text.Translate("LANGUAGE"),
+        _ when IsMonitoring => _text.Translate("MONITORING"),
         _ => _text.Translate("DIAGNOSIS")
     };
 
@@ -64,6 +76,9 @@ public sealed class HistoryItemViewModel
         ActivityHistoryKind.SpeedTest => _text.Translate("Speed test completed"),
         ActivityHistoryKind.SettingsChanged => _text.Translate("Settings changed"),
         ActivityHistoryKind.LanguageChanged => _text.Translate("Language changed"),
+        _ when MonitoringSession is not null => _text.Format(
+            "{0} monitoring session",
+            GetProfileLabel(MonitoringSession.Profile)),
         _ => Report?.Diagnosis.Headline ?? string.Empty
     };
 
@@ -81,6 +96,11 @@ public sealed class HistoryItemViewModel
             "{0} changed to {1}",
             ChangedSettings[0].PreviousValue,
             ChangedSettings[0].NewValue),
+        _ when MonitoringSession is not null => _text.Format(
+            "{0} availability · {1} outages · {2}",
+            FormatPercent(MonitoringSession.Summary.AvailabilityPercent),
+            MonitoringSession.Summary.OutageCount,
+            FormatMonitoringDuration(MonitoringSession.Duration)),
         _ => Report?.Diagnosis.Summary ?? string.Empty
     };
 
@@ -107,12 +127,65 @@ public sealed class HistoryItemViewModel
             "{0:N1} MB",
             (SpeedTestResult.DownloadBytes + SpeedTestResult.UploadBytes) / 1_000_000d);
 
+    public string MonitoringAvailabilityText => MonitoringSession is null
+        ? "—"
+        : FormatPercent(MonitoringSession.Summary.AvailabilityPercent);
+
+    public string MonitoringOutagesText => MonitoringSession?.Summary.OutageCount.ToString("N0", _text.Culture) ?? "—";
+
+    public string MonitoringOutageDurationText => MonitoringSession is null
+        ? "—"
+        : FormatMonitoringDuration(MonitoringSession.Summary.TotalOutageDuration);
+
+    public string MonitoringAverageLatencyText => MonitoringSession is null
+        ? "—"
+        : FormatLatency(MonitoringSession.Summary.AverageLatencyMilliseconds);
+
+    public string MonitoringMaximumLatencyText => MonitoringSession is null
+        ? "—"
+        : FormatLatency(MonitoringSession.Summary.MaximumLatencyMilliseconds);
+
+    public string MonitoringJitterText => MonitoringSession is null
+        ? "—"
+        : FormatLatency(MonitoringSession.Summary.AverageJitterMilliseconds);
+
+    public string MonitoringProfileText => MonitoringSession is null
+        ? "—"
+        : GetProfileLabel(MonitoringSession.Profile);
+
+    public string MonitoringBaselineText => MonitoringSession?.Baseline.Trend switch
+    {
+        BaselineTrend.Better => _text.Translate("Better than your local baseline"),
+        BaselineTrend.Worse => _text.Translate("Worse than your local baseline"),
+        BaselineTrend.Similar => _text.Translate("Similar to your local baseline"),
+        _ => _text.Translate("No earlier baseline for this profile")
+    };
+
+    public IReadOnlyList<MonitoringEventItemViewModel> MonitoringEvents => MonitoringSession?.Events
+        .Where(item => item.Kind is MonitoringEventKind.OutageStarted
+            or MonitoringEventKind.ConnectionRecovered
+            or MonitoringEventKind.QualityDegraded
+            or MonitoringEventKind.QualityRecovered)
+        .OrderByDescending(item => item.OccurredAtUtc)
+        .Select(item => MonitoringEventItemViewModel.Create(item, _text))
+        .ToArray() ?? Array.Empty<MonitoringEventItemViewModel>();
+
+    public IReadOnlyList<WindowsNetworkEventItemViewModel> WindowsNetworkEvents =>
+        MonitoringSession?.WindowsEvents
+            .Where(item => item.RelatedMonitoringEventId is not null)
+            .OrderByDescending(item => item.OccurredAtUtc)
+            .Take(30)
+            .Select(item => WindowsNetworkEventItemViewModel.Create(item, _text))
+            .ToArray() ?? Array.Empty<WindowsNetworkEventItemViewModel>();
+
+    public bool HasWindowsNetworkEvents => WindowsNetworkEvents.Count > 0;
+
     public static HistoryItemViewModel FromReport(
         DiagnosticReport report,
         LocalizationService text)
     {
         ArgumentNullException.ThrowIfNull(report);
-        return new HistoryItemViewModel(report.Id, report.CompletedAtUtc, text, report, null);
+        return new HistoryItemViewModel(report.Id, report.CompletedAtUtc, text, report, null, null);
     }
 
     public static HistoryItemViewModel FromActivity(
@@ -120,7 +193,21 @@ public sealed class HistoryItemViewModel
         LocalizationService text)
     {
         ArgumentNullException.ThrowIfNull(activity);
-        return new HistoryItemViewModel(activity.Id, activity.OccurredAtUtc, text, null, activity);
+        return new HistoryItemViewModel(activity.Id, activity.OccurredAtUtc, text, null, activity, null);
+    }
+
+    public static HistoryItemViewModel FromMonitoringSession(
+        MonitoringSession session,
+        LocalizationService text)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        return new HistoryItemViewModel(
+            session.Id,
+            session.CompletedAtUtc,
+            text,
+            null,
+            null,
+            session);
     }
 
     private string GetSettingLabel(string settingName) => settingName switch
@@ -182,6 +269,21 @@ public sealed class HistoryItemViewModel
 
     private string FormatLatency(double value) =>
         string.Format(_text.Culture, "{0:N0} ms", value);
+
+    private string FormatPercent(double value) =>
+        string.Format(_text.Culture, "{0:N1}%", value);
+
+    private static string FormatMonitoringDuration(TimeSpan value) => value.TotalHours >= 1
+        ? value.ToString("h\\:mm\\:ss", CultureInfo.InvariantCulture)
+        : value.ToString("mm\\:ss", CultureInfo.InvariantCulture);
+
+    private string GetProfileLabel(MonitoringProfile profile) => profile switch
+    {
+        MonitoringProfile.Gaming => _text.Translate("Gaming"),
+        MonitoringProfile.Streaming => _text.Translate("Streaming"),
+        MonitoringProfile.HomeOffice => _text.Translate("Home office"),
+        _ => _text.Translate("Standard")
+    };
 }
 
 public sealed record SettingChangeViewModel(

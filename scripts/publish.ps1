@@ -2,6 +2,8 @@
 param(
     [string]$Version,
     [string]$DotNetPath,
+    [string]$SigningCertificatePath,
+    [string]$SigningCertificatePassword,
     [switch]$CopyToDownloads
 )
 
@@ -102,6 +104,20 @@ if ($LASTEXITCODE -ne 0) { throw "Publish failed with exit code $LASTEXITCODE." 
 $executable = Join-Path $publishDirectory 'NetCheck.exe'
 if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
     throw "Publish completed without the expected executable: $executable"
+}
+
+$hasSigningCertificate = -not [string]::IsNullOrWhiteSpace($SigningCertificatePath)
+$hasSigningPassword = -not [string]::IsNullOrWhiteSpace($SigningCertificatePassword)
+if ($hasSigningCertificate -xor $hasSigningPassword) {
+    throw 'Authenticode signing requires both SigningCertificatePath and SigningCertificatePassword.'
+}
+if ($hasSigningCertificate) {
+    & (Join-Path $PSScriptRoot 'sign.ps1') `
+        -FilePath $executable `
+        -CertificatePath $SigningCertificatePath `
+        -CertificatePassword $SigningCertificatePassword
+} else {
+    Write-Warning 'No Authenticode certificate was provided. The executable is intentionally unsigned.'
 }
 
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'LICENSE') `

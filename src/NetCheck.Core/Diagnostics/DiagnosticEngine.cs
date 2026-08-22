@@ -171,5 +171,5 @@ public sealed class DiagnosticEngine : IDiagnosticEngine
             });
 
     private static string GetApplicationVersion() =>
-        Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "1.1.0";
+        Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "1.2.0";
 }

@@ -2,13 +2,15 @@
 
 ## Design goals
 
-NetCheck is designed around five constraints:
+NetCheck is designed around seven constraints:
 
 1. Diagnostics must be read-only and work without elevation.
 2. One failed or unsupported probe must not abort the assessment.
 3. Technical evidence and user-facing diagnosis must remain separate.
 4. Windows-specific code must not leak into the domain or presentation logic.
 5. Repairs must be evidence-based, explicitly approved, bounded to known actions, and independently reported.
+6. Long-running monitoring must survive page navigation and finalize safely during application shutdown.
+7. Local support and update workflows must minimize disclosure and never execute downloaded content.
 
 ## Layers
 
@@ -28,7 +30,7 @@ NetCheck.Core ◄── NetCheck.Infrastructure
 
 ## Presentation and localization
 
-The WPF shell uses MVVM navigation and a shared resource dictionary for the visual system. Dashboard, speed test, history, and settings views contain only presentation bindings; diagnostic behavior remains in Core and Infrastructure.
+The WPF shell uses MVVM navigation and a shared resource dictionary for the visual system. Dashboard, speed test, monitoring, history, and settings views contain only presentation bindings; network behavior remains in Core and Infrastructure. A custom WPF rendering control draws live and historical line charts without introducing a charting dependency or network logic into code-behind.
 
 Matched English and German resource dictionaries provide the complete static interface. Diagnostic reports remain language-neutral in storage, while an application-layer projection localizes diagnoses, technical evidence, repair plans, history, dialogs, and exports. This allows an existing report to be re-rendered immediately after a language switch without coupling diagnostic or repair rules to presentation language.
 
@@ -44,7 +46,17 @@ Every probe executes inside an exception boundary. Cancellation returns a partia
 
 The manually started speed test is independent from the read-only diagnostic pipeline. `ISpeedTestService` and its progress/result models live in Core; the Cloudflare HTTP implementation lives in Infrastructure; the WPF view model owns cancellation, localization, presentation state, and best-effort local persistence. Parallel probes size five download rounds spread across 17 seconds and four upload rounds across 11 seconds. This preserves a roughly 30-second observation window even when a fast connection reaches the bounded traffic cap early. Throughput uses only active-transfer time, while scheduling gaps provide samples across the complete window. Results distinguish weighted active-transfer average throughput from the fastest sustained sampling interval.
 
-Diagnostic reports remain in their backward-compatible report store. Speed-test results, settings changes, and menu-language changes use a separate structured activity store. The history view merges both sources chronologically, localizes presentation values at display time, and clears both stores only after explicit confirmation.
+Diagnostic reports remain in their backward-compatible report store. Speed-test results, settings changes, and menu-language changes use a separate structured activity store. Monitoring sessions use a third store. The history view merges all sources chronologically, localizes presentation values at display time, and clears all stores only after explicit confirmation.
+
+## Monitoring execution
+
+`MonitoringService` in Core owns the state machine, rolling loss and jitter calculations, transition events, summaries, graceful cancellation, and correlation of Windows events with outages or recoveries. `INetworkMonitoringProbe` isolates the Windows implementation. Probe-level exceptions become recorded issues or unavailable fields and do not terminate the session.
+
+`WindowsNetworkMonitoringProbe` performs IPv4 and IPv6 ICMP independently, bounded DNS and HTTPS checks, TTL-limited traceroutes, adapter/driver/VPN/firewall discovery, localized `netsh` Wi-Fi inspection, and bounded `wevtutil` queries. Process invocations use structured argument lists, hidden windows, cancellation, and hard timeouts.
+
+`MonitoringViewModel` owns only presentation state, commands, localization, chart collections, notifications, baseline application, and persistence coordination. The same instance remains alive while the shell navigates. Closing the main window first cancels and awaits the active run, allowing the Core service to return a partial session that is written before process shutdown.
+
+Historical sessions with the same profile feed `MonitoringBaselineCalculator`. It compares latency, packet loss, and availability against up to ten recent local sessions; no network or cloud baseline is used.
 
 ## Root-cause analysis
 
@@ -71,17 +83,26 @@ Repairs that do not require a restart are followed by a fresh diagnostic. Winsoc
 
 ## Persistence
 
-History stores one JSON file per diagnostic report and one JSON file per activity under separate directories in the current user’s local application data. Settings use a separate JSON file. Writes use a temporary sibling file followed by an atomic replacement, preventing a process interruption from leaving a partially written file.
+History stores one JSON file per diagnostic report, activity, and monitoring session under separate directories in the current user’s local application data. Settings use a separate JSON file. Writes use a temporary sibling file followed by an atomic replacement, preventing a process interruption from leaving a partially written file.
 
-History loading isolates malformed or inaccessible report and activity files. A bad entry is skipped rather than making history unavailable.
+History loading isolates malformed or inaccessible report, activity, and monitoring files. A bad entry is skipped rather than making history unavailable. The History view merges all three sources and derives its speed-test chart from the recent structured activity entries.
 
 ## Export
 
 The exporter supports HTML, JSON, and plain text. HTML values are encoded before insertion. Exports always redact MAC addresses and redact the computer name unless the user explicitly enables it. Files are written atomically.
 
+`SupportBundleService` separately builds a local ZIP from bounded known text sources. It discovers sensitive local tokens, replaces user and computer names, SSID values, MAC addresses, and IPv4/IPv6 addresses, assigns generic archive entry names, and atomically moves the completed ZIP into place. It does not upload the archive.
+
+## Updates and release integrity
+
+`GitHubUpdateService` calls one fixed HTTPS GitHub API endpoint, rejects non-GitHub or cross-repository links, and exposes a package only when the version-matched ZIP and SHA-256 assets are both present. It never downloads or executes an asset.
+
+The release workflow publishes a self-contained ZIP, SHA-256 files, and an Inno Setup installer. Optional Authenticode signing requires paired GitHub Secrets containing a CA-issued PFX and password. The signing script rejects self-signed leaf certificates, uses SHA-256 with an HTTPS timestamp server, and verifies the resulting Windows trust status. Missing secrets produce explicitly unsigned artifacts rather than an invented trust signal.
+
 ## Error handling
 
 - Probe exceptions are converted into warning results by the engine.
+- Monitoring check failures are isolated per IPv4, IPv6, DNS, HTTPS, Wi-Fi, traceroute, firewall, driver, VPN, or event source.
 - Expected file and permission failures are explained in the UI.
 - Unhandled WPF, task, and AppDomain exceptions are logged locally.
 - Logging failures are swallowed to prevent recursive crashes.

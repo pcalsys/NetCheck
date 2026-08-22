@@ -126,7 +126,13 @@ function Test-NetCheckDotNetSdk {
             -ErrorAction SilentlyContinue |
             Where-Object Name -Like "$Channel.*" |
             Select-Object -First 1
-        return $null -ne $windowsDesktopReferencePack
+        $windowsDesktopRuntimeRoot = Join-Path $dotnetRoot 'shared\Microsoft.WindowsDesktop.App'
+        $windowsDesktopRuntime = Get-ChildItem -LiteralPath $windowsDesktopRuntimeRoot `
+            -Directory `
+            -ErrorAction SilentlyContinue |
+            Where-Object Name -Like "$Channel.*" |
+            Select-Object -First 1
+        return $null -ne $windowsDesktopReferencePack -and $null -ne $windowsDesktopRuntime
     } catch {
         return $false
     } finally {

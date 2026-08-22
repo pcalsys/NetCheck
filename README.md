@@ -17,7 +17,11 @@ NetCheck is a native Windows desktop application that explains *why* a computer 
 | Connection stability | Short-sample packet loss, average latency, and jitter |
 | Proxy configuration | Whether a user proxy may explain a failed web check |
 
-The separate, manually started speed test measures latency plus average and maximum observed download and upload throughput over an approximately 30-second measurement. Completed results are stored locally alongside diagnostics and configuration changes in the unified history.
+The separate, manually started speed test measures latency plus average and maximum observed download and upload throughput over an approximately 30-second measurement. Completed results are stored locally alongside diagnostics and configuration changes in the unified history, which also charts recent download and upload results.
+
+The integrated **Monitoring** page runs independently of navigation for 15, 30, or 60 minutes, or continuously. Standard, Gaming, Streaming, and Home office profiles provide different sampling rates and quality thresholds. Live charts show latency, jitter, and rolling packet loss; outage and recovery events include exact local times and are correlated with relevant Windows WLAN, DHCP, and NetworkProfile events.
+
+At the beginning and end of a monitoring session, NetCheck separately inspects IPv4 and IPv6 reachability and traceroutes, Wi-Fi SSID/signal/channel/band/link rates, the active network driver and version, VPN adapters, and Windows Firewall profiles. Each probe has its own failure boundary, so an unavailable IPv6 route or restricted Windows event log does not stop the remaining monitoring session.
 
 The diagnosis engine correlates results instead of treating every failed ping as an internet outage. For example, it can distinguish a DNS failure from a gateway failure, and it uses the web check to avoid classifying an ICMP-blocking network as completely offline.
 
@@ -29,7 +33,12 @@ The diagnosis engine correlates results instead of treating every failed ping as
 - Evidence-based repair plans with per-step results and restart guidance
 - Expandable technical evidence for every check
 - Unified local history for diagnoses, speed tests, settings changes, and language switches
+- Persistent monitoring sessions with availability, outage count/duration, average/maximum quality values, and local baseline trends
+- In-app outage and recovery notifications that remain active while another page is open
+- Extended dual-stack, Wi-Fi, driver, VPN, firewall, traceroute, and Windows-event diagnostics
 - Privacy-aware HTML, JSON, and text export
+- Locally generated support ZIPs that automatically redact user/computer names, SSIDs, MAC addresses, and IP addresses
+- Manual update checks against the fixed official GitHub release endpoint; NetCheck never executes a downloaded file
 - Configurable endpoints, timeouts, sample count, and quality thresholds
 - Opt-in, approximately 30-second internet speed test with live progress, cancellation, maximum/average Mbit/s results, and local history
 - Diagnostics run without elevation; repairs are never automatic and may request UAC after confirmation
@@ -58,13 +67,13 @@ This single command restores dependencies, builds all projects in Release mode, 
 
 On a computer without a compatible .NET SDK, the first build downloads the official SDK into `.dotnet` and shows live progress from 0% to 100% in the command window before extraction begins.
 
-After a successful local Release build, a start-ready copy is also placed in the current user's Windows Downloads folder under `NetCheck-1.1.0\NetCheck.exe`. The command window prints the complete path in a prominent completion message, and File Explorer opens the containing folder. Continuous-integration builds do not create or open this personal Downloads copy.
+After a successful local Release build, a start-ready copy is also placed in the current user's Windows Downloads folder under `NetCheck-1.2.0\NetCheck.exe`. The command window prints the complete path in a prominent completion message, and File Explorer opens the containing folder. Continuous-integration builds do not create or open this personal Downloads copy.
 
 The finished files are:
 
 - `artifacts\publish\win-x64\NetCheck.exe` — directly runnable application
-- `artifacts\NetCheck-1.1.0-win-x64.zip` — distributable package
-- `artifacts\NetCheck-1.1.0-win-x64.zip.sha256` — SHA-256 checksum
+- `artifacts\NetCheck-1.2.0-win-x64.zip` — distributable package
+- `artifacts\NetCheck-1.2.0-win-x64.zip.sha256` — SHA-256 checksum
 
 Start the locally built application with:
 
@@ -83,11 +92,15 @@ build.cmd -CollectCoverage
 
 `-SkipTests` and `-SkipPublish` shorten local iteration. `-SkipDownloadsCopy` keeps the start-ready files only under `artifacts`. The default `build.cmd` path is the supported clean-clone and release build and is exercised by GitHub Actions on every push and pull request.
 
+The release workflow additionally builds an Inno Setup installer and its SHA-256 file. Authenticode signing is optional and uses only a real PFX supplied through the paired `NETCHECK_SIGNING_CERTIFICATE_BASE64` and `NETCHECK_SIGNING_CERTIFICATE_PASSWORD` GitHub Secrets. Without both secrets, the workflow clearly marks the EXE and installer as unsigned; it never generates or presents a self-signed certificate as trusted.
+
 ## Privacy and data
 
 NetCheck sends only the traffic required by its configured checks: DNS lookup, ICMP echo requests, and one lightweight HTTP connectivity request. The defaults are visible and editable in Settings.
 
 The speed test runs only when the user starts it. It spreads five download rounds across 17 seconds and four upload rounds across 11 seconds, plus latency and preparation, for a total of roughly 30 seconds. Dynamically sized test data goes directly to and from Cloudflare's `speed.cloudflare.com` endpoints, with a hard combined cap of about 200 MB per run; slower connections usually use less. NetCheck stores the result only in its local history and does not upload it as NetCheck telemetry. Cloudflare receives the connection IP address as the speed-test endpoint operator. Wi-Fi conditions, VPNs, other traffic, the selected test endpoint, and provider congestion can all affect the measurement.
+
+Monitoring starts only when requested. It sends bounded ICMP probes to fixed Cloudflare IPv4 and IPv6 targets, resolves `www.microsoft.com`, and uses an HTTPS Microsoft connectivity endpoint. Traceroutes are capped at 12 hops. Windows network events are read locally. The manual update check uses only `https://api.github.com/repos/pcalsys/NetCheck/releases/latest`, accepts release and asset links belonging to this repository over HTTPS, and recognizes the release ZIP only when its matching SHA-256 asset is present.
 
 The Fix workflow runs only after confirmation. It may renew DHCP, clear DNS or ARP caches, disable an identified current-user proxy, or reset Windows network components. NetCheck does not attempt to change physical connectivity, managed static addressing, captive portals, Wi-Fi signal quality, router configuration, or provider infrastructure.
 
@@ -95,10 +108,11 @@ Local files are stored in `%LOCALAPPDATA%\NetCheck`:
 
 - `Reports\` — completed diagnostic history
 - `Activities\` — speed-test results and configuration-change history
+- `Monitoring\` — completed or safely stopped monitoring sessions
 - `settings.json` — user preferences
 - `NetCheck.log` — created only when an application error is recorded
 
-Computer names are excluded from exports by default. Adapter MAC addresses are always redacted from exported reports. NetCheck does not upload reports or telemetry.
+Computer names are excluded from exports by default. Adapter MAC addresses are always redacted from exported reports. Support ZIPs apply stricter automatic redaction to all included text and use generic archive entry names; users should still review an archive before sharing it. NetCheck does not upload reports, support bundles, or telemetry.
 
 See the [changelog](CHANGELOG.md), [architecture](docs/ARCHITECTURE.md), [security and privacy](SECURITY.md), and [support guide](docs/SUPPORT.md) for details.
 

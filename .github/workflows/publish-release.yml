@@ -6,7 +6,7 @@ on:
       tag:
         description: Existing release tag to build and publish
         required: true
-        default: v1.1.0
+        default: v1.2.0
         type: string
 
 concurrency:
@@ -43,9 +43,94 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Verify source version matches tag
+        shell: pwsh
+        run: |
+          [xml]$project = Get-Content -LiteralPath 'src/NetCheck.App/NetCheck.App.csproj' -Raw
+          $projectVersion = [string]($project.Project.PropertyGroup.Version | Select-Object -First 1)
+          $tagVersion = '${{ steps.version.outputs.version }}'
+          if ($projectVersion -ne $tagVersion) {
+            throw "The application version $projectVersion does not match tag version $tagVersion."
+          }
+
+      - name: Prepare optional Authenticode certificate
+        id: signing
+        shell: pwsh
+        env:
+          SIGNING_CERTIFICATE_BASE64: ${{ secrets.NETCHECK_SIGNING_CERTIFICATE_BASE64 }}
+          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.NETCHECK_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          $hasCertificate = -not [string]::IsNullOrWhiteSpace($env:SIGNING_CERTIFICATE_BASE64)
+          $hasPassword = -not [string]::IsNullOrWhiteSpace($env:SIGNING_CERTIFICATE_PASSWORD)
+          if ($hasCertificate -xor $hasPassword) {
+            throw 'Both Authenticode secrets must be configured together.'
+          }
+
+          if (-not $hasCertificate) {
+            'enabled=false' >> $env:GITHUB_OUTPUT
+            'certificate_path=' >> $env:GITHUB_OUTPUT
+            'Release artifacts will be unsigned because no Authenticode secrets are configured.' >> $env:GITHUB_STEP_SUMMARY
+            exit 0
+          }
+
+          $certificatePath = Join-Path $env:RUNNER_TEMP 'NetCheck-release-signing.pfx'
+          try {
+            $certificateBytes = [Convert]::FromBase64String($env:SIGNING_CERTIFICATE_BASE64)
+          } catch {
+            throw 'NETCHECK_SIGNING_CERTIFICATE_BASE64 is not valid Base64.'
+          }
+          [IO.File]::WriteAllBytes($certificatePath, $certificateBytes)
+          'enabled=true' >> $env:GITHUB_OUTPUT
+          "certificate_path=$certificatePath" >> $env:GITHUB_OUTPUT
+          'Release artifacts will use the configured certificate after the signing step validates its trust and issuer.' >> $env:GITHUB_STEP_SUMMARY
+
       - name: Build self-contained Windows package
         shell: pwsh
-        run: ./scripts/publish.ps1 -Version '${{ steps.version.outputs.version }}'
+        env:
+          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.NETCHECK_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          $parameters = @{ Version = '${{ steps.version.outputs.version }}' }
+          if ('${{ steps.signing.outputs.enabled }}' -eq 'true') {
+            $parameters.SigningCertificatePath = '${{ steps.signing.outputs.certificate_path }}'
+            $parameters.SigningCertificatePassword = $env:SIGNING_CERTIFICATE_PASSWORD
+          }
+          ./scripts/publish.ps1 @parameters
+
+      - name: Build Windows installer
+        shell: pwsh
+        env:
+          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.NETCHECK_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          choco install innosetup --yes --no-progress
+          if ($LASTEXITCODE -ne 0) {
+            throw "Inno Setup installation failed with exit code $LASTEXITCODE."
+          }
+
+          $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6/ISCC.exe'
+          if (-not (Test-Path -LiteralPath $compiler -PathType Leaf)) {
+            throw "Inno Setup compiler was not found: $compiler"
+          }
+          $version = '${{ steps.version.outputs.version }}'
+          $sourceDirectory = (Resolve-Path -LiteralPath 'artifacts/publish/win-x64').Path
+          $outputDirectory = (Resolve-Path -LiteralPath 'artifacts').Path
+          & $compiler `
+            "/DMyAppVersion=$version" `
+            "/DSourceDir=$sourceDirectory" `
+            "/DOutputDir=$outputDirectory" `
+            'installer/NetCheck.iss'
+          if ($LASTEXITCODE -ne 0) {
+            throw "Installer compilation failed with exit code $LASTEXITCODE."
+          }
+
+          $installer = Join-Path $outputDirectory "NetCheck-$version-setup.exe"
+          if ('${{ steps.signing.outputs.enabled }}' -eq 'true') {
+            ./scripts/sign.ps1 `
+              -FilePath $installer `
+              -CertificatePath '${{ steps.signing.outputs.certificate_path }}' `
+              -CertificatePassword $env:SIGNING_CERTIFICATE_PASSWORD
+          } else {
+            Write-Warning 'The installer is intentionally unsigned because no signing certificate is configured.'
+          }
 
       - name: Generate SHA-256 checksum
         id: checksum
@@ -53,18 +138,32 @@ jobs:
         run: |
           $version = '${{ steps.version.outputs.version }}'
           $archive = Join-Path $PWD "artifacts/NetCheck-$version-win-x64.zip"
+          $installer = Join-Path $PWD "artifacts/NetCheck-$version-setup.exe"
           if (-not (Test-Path -LiteralPath $archive)) {
             throw "Release archive was not created: $archive"
+          }
+          if (-not (Test-Path -LiteralPath $installer)) {
+            throw "Installer was not created: $installer"
           }
 
           $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
           $checksumFile = "$archive.sha256"
           $checksumLine = "$hash  $([IO.Path]::GetFileName($archive))"
           [IO.File]::WriteAllText($checksumFile, $checksumLine, [Text.Encoding]::ASCII)
+          $installerHash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash
+          $installerChecksumFile = "$installer.sha256"
+          $installerChecksumLine = "$installerHash  $([IO.Path]::GetFileName($installer))"
+          [IO.File]::WriteAllText(
+            $installerChecksumFile,
+            $installerChecksumLine,
+            [Text.Encoding]::ASCII)
 
           "sha256=$hash" >> $env:GITHUB_OUTPUT
           "archive=$archive" >> $env:GITHUB_OUTPUT
           "checksum_file=$checksumFile" >> $env:GITHUB_OUTPUT
+          "installer=$installer" >> $env:GITHUB_OUTPUT
+          "installer_sha256=$installerHash" >> $env:GITHUB_OUTPUT
+          "installer_checksum_file=$installerChecksumFile" >> $env:GITHUB_OUTPUT
 
       - name: Upload release assets
         shell: pwsh
@@ -74,6 +173,8 @@ jobs:
           gh release upload '${{ inputs.tag }}' `
             '${{ steps.checksum.outputs.archive }}' `
             '${{ steps.checksum.outputs.checksum_file }}' `
+            '${{ steps.checksum.outputs.installer }}' `
+            '${{ steps.checksum.outputs.installer_checksum_file }}' `
             --clobber `
             --repo $env:GITHUB_REPOSITORY
 
@@ -114,6 +215,8 @@ jobs:
           $expectedHash = '${{ steps.checksum.outputs.sha256 }}'
           $archive = '${{ steps.checksum.outputs.archive }}'
           $checksumFile = '${{ steps.checksum.outputs.checksum_file }}'
+          $installer = '${{ steps.checksum.outputs.installer }}'
+          $installerChecksumFile = '${{ steps.checksum.outputs.installer_checksum_file }}'
           $release = gh release view $tag --repo $env:GITHUB_REPOSITORY --json assets,url | ConvertFrom-Json
           if ($LASTEXITCODE -ne 0) {
             throw "Could not verify release $tag."
@@ -121,9 +224,14 @@ jobs:
 
           $archiveName = "NetCheck-$version-win-x64.zip"
           $checksumName = "$archiveName.sha256"
+          $installerName = "NetCheck-$version-setup.exe"
+          $installerChecksumName = "$installerName.sha256"
           $remoteArchive = $release.assets | Where-Object name -eq $archiveName | Select-Object -First 1
           $remoteChecksum = $release.assets | Where-Object name -eq $checksumName | Select-Object -First 1
-          if ($null -eq $remoteArchive -or $null -eq $remoteChecksum) {
+          $remoteInstaller = $release.assets | Where-Object name -eq $installerName | Select-Object -First 1
+          $remoteInstallerChecksum = $release.assets | Where-Object name -eq $installerChecksumName | Select-Object -First 1
+          if ($null -eq $remoteArchive -or $null -eq $remoteChecksum `
+              -or $null -eq $remoteInstaller -or $null -eq $remoteInstallerChecksum) {
             throw 'One or more release assets are missing.'
           }
 
@@ -134,6 +242,12 @@ jobs:
           if ([int64]$remoteChecksum.size -ne (Get-Item -LiteralPath $checksumFile).Length) {
             throw 'The published checksum size does not match the local checksum file.'
           }
+          if ([int64]$remoteInstaller.size -ne (Get-Item -LiteralPath $installer).Length) {
+            throw 'The published installer size does not match the local installer.'
+          }
+          if ([int64]$remoteInstallerChecksum.size -ne (Get-Item -LiteralPath $installerChecksumFile).Length) {
+            throw 'The published installer checksum size does not match the local checksum file.'
+          }
 
           if ($remoteArchive.digest -and $remoteArchive.digest -ne "sha256:$($expectedHash.ToLowerInvariant())") {
             throw 'The published archive digest does not match the generated SHA-256 value.'
@@ -142,3 +256,13 @@ jobs:
           "### NetCheck $version release assets published" >> $env:GITHUB_STEP_SUMMARY
           "- Release: $($release.url)" >> $env:GITHUB_STEP_SUMMARY
           "- SHA-256: ``$expectedHash``" >> $env:GITHUB_STEP_SUMMARY
+          "- Installer SHA-256: ``${{ steps.checksum.outputs.installer_sha256 }}``" >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Remove signing certificate
+        if: always() && steps.signing.outputs.enabled == 'true'
+        shell: pwsh
+        run: |
+          $certificatePath = '${{ steps.signing.outputs.certificate_path }}'
+          if (Test-Path -LiteralPath $certificatePath -PathType Leaf) {
+            Remove-Item -LiteralPath $certificatePath -Force
+          }

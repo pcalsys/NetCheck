@@ -24,6 +24,12 @@ Do not disable organization-managed proxies, VPNs, firewalls, or DNS settings wi
 
 Pause downloads, cloud backups, streaming, and VPN traffic, then compare another run. Test over Ethernet when possible because Wi-Fi signal, channel congestion, power-saving behavior, and other devices share the available capacity. A run samples the connection repeatedly for approximately 30 seconds. The displayed maximum is the fastest sustained sample NetCheck observed during this run, not a guaranteed provider line rate. The test contacts Cloudflare and can use up to about 200 MB, so do not run it on a metered connection unless that data use is acceptable. Completed results stay in NetCheck's local history.
 
+## Monitoring reports an interruption
+
+Open Monitoring or History and compare the exact outage time with the correlated Windows WLAN, DHCP, and NetworkProfile entries. A failed IPv6 route does not necessarily mean IPv4 internet access is down, and a network that blocks ICMP can remain available through the HTTPS fallback. Profile thresholds intentionally differ: Gaming flags latency and jitter sooner than Standard.
+
+Use **Create support ZIP** when a maintainer needs more context. NetCheck creates the archive locally and removes user/computer names, SSIDs, MAC addresses, and IP addresses. Review the ZIP before sharing it; NetCheck never uploads it for you.
+
 ## Fix detected issues
 
 When NetCheck can safely associate a failed check with a supported Windows repair, the dashboard shows **Fix issue**. Review the complete plan before choosing Yes. Windows may request administrator approval for DHCP, cache, Winsock, or TCP/IP repairs.

@@ -56,4 +56,30 @@ public sealed class HistoryItemViewModelTests
         Assert.Equal("29.6 s", item.DurationText);
         Assert.Equal("194.0 MB", item.DataUsedText);
     }
+
+    [Fact]
+    public void MonitoringSession_ExposesAvailabilityAndOutagesForHistoryDetails()
+    {
+        var item = HistoryItemViewModel.FromMonitoringSession(new MonitoringSession
+        {
+            StartedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-15),
+            CompletedAtUtc = DateTimeOffset.UtcNow,
+            Profile = MonitoringProfile.HomeOffice,
+            Summary = new MonitoringSummary
+            {
+                TotalSamples = 100,
+                SuccessfulSamples = 98,
+                AvailabilityPercent = 98,
+                OutageCount = 2,
+                TotalOutageDuration = TimeSpan.FromSeconds(35),
+                AverageLatencyMilliseconds = 24,
+                MaximumLatencyMilliseconds = 80
+            }
+        }, new LocalizationService());
+
+        Assert.True(item.IsMonitoring);
+        Assert.Equal("98.0%", item.MonitoringAvailabilityText);
+        Assert.Equal("2", item.MonitoringOutagesText);
+        Assert.Contains("Home office", item.Title, StringComparison.Ordinal);
+    }
 }

@@ -20,13 +20,23 @@ The optional speed test contacts `https://speed.cloudflare.com/__down` and `http
 
 Targets are editable. The connectivity endpoint intentionally uses HTTP so NetCheck can observe captive-portal redirects; response reading is capped at 1,024 characters. NetCheck sends no diagnostic report, unique identifier, account information, or usage telemetry.
 
+Monitoring is also opt-in. Its defaults use ICMP with `1.1.1.1` and `2606:4700:4700::1111`, DNS resolution for `www.microsoft.com`, and HTTPS to `www.msftconnecttest.com`. IPv4 and IPv6 are independent, traceroutes stop after 12 hops, and all network/process operations have cancellation and bounded timeouts. Wi-Fi, driver, VPN, firewall, and WLAN/DHCP/NetworkProfile event information is read locally.
+
+The manual update checker contacts only `https://api.github.com/repos/pcalsys/NetCheck/releases/latest`. It requires HTTPS, validates that release and download paths belong to `pcalsys/NetCheck`, and treats a package as complete only when the version-matched ZIP and SHA-256 file both exist. NetCheck neither downloads nor executes release content automatically.
+
 ## Stored data
 
 Diagnostic history includes local adapter names, IP configuration, DNS/gateway addresses, check evidence, and the Windows computer name. It is stored only in the current user’s `%LOCALAPPDATA%\NetCheck\Reports` directory and can be disabled in Settings.
 
-Completed speed-test results and actual configuration changes are stored as structured entries under `%LOCALAPPDATA%\NetCheck\Activities`. Configuration entries contain the changed setting name plus its previous and new values, including menu-language switches. The History page can clear both report and activity history after explicit confirmation.
+Completed speed-test results and actual configuration changes are stored as structured entries under `%LOCALAPPDATA%\NetCheck\Activities`. Completed and user-stopped monitoring sessions are stored under `%LOCALAPPDATA%\NetCheck\Monitoring`; they may include adapter names, SSIDs, IP/gateway data, routes, driver versions, and relevant Windows network events. The History page can clear report, activity, and monitoring history after explicit confirmation.
 
 Exports always redact MAC addresses. The Windows computer name is redacted unless the user explicitly enables it in Settings. Users should still review exported reports before sharing them because local IP addresses and infrastructure details can be sensitive.
+
+The support-bundle command is stricter than ordinary report export. It works locally, reads only bounded known NetCheck text files, gives archive entries generic names, and redacts the current user name, computer name, discovered SSIDs, MAC addresses, and IPv4/IPv6 addresses. The archive is never uploaded by NetCheck. Users should still inspect it before sharing.
+
+## Release signing
+
+Release signing is optional. The GitHub workflow expects a CA-issued PFX in `NETCHECK_SIGNING_CERTIFICATE_BASE64` and its password in `NETCHECK_SIGNING_CERTIFICATE_PASSWORD`. Both must be configured together. The signing helper rejects self-signed leaf certificates, timestamps over HTTPS, and requires Windows to report a valid Authenticode signature. When the secrets are absent, the workflow explicitly produces unsigned artifacts and does not claim they are trusted.
 
 ## Reporting a vulnerability
 

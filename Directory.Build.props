@@ -10,6 +10,9 @@
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <Authors>NetCheck</Authors>
     <Product>NetCheck</Product>
+    <Version>1.2.0</Version>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
     <Copyright>Copyright © NetCheck</Copyright>
   </PropertyGroup>
 </Project>

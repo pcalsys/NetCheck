@@ -144,42 +144,225 @@ function Install-NetCheckDotNetSdk {
         [string]$Channel
     )
 
-    $installerUri = 'https://dot.net/v1/dotnet-install.ps1'
+    $sdkArchiveUri = "https://aka.ms/dotnet/$Channel/dotnet-sdk-win-x64.zip"
     $downloadDirectory = Join-Path ([IO.Path]::GetTempPath()) 'NetCheck-build'
-    $installerPath = Join-Path $downloadDirectory 'dotnet-install.ps1'
+    $archiveName = "dotnet-sdk-$Channel-win-x64-$([guid]::NewGuid().ToString('N')).zip"
+    $archivePath = Join-Path $downloadDirectory $archiveName
     [IO.Directory]::CreateDirectory($downloadDirectory) | Out-Null
     [IO.Directory]::CreateDirectory($InstallDirectory) | Out-Null
 
-    $previousProgressPreference = $ProgressPreference
     try {
-        $ProgressPreference = 'SilentlyContinue'
-        if ([Net.ServicePointManager]::SecurityProtocol -band [Net.SecurityProtocolType]::Tls12) {
-            # TLS 1.2 is already enabled.
-        } else {
-            [Net.ServicePointManager]::SecurityProtocol =
-                [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+        Invoke-NetCheckDownloadWithProgress `
+            -Uri $sdkArchiveUri `
+            -DestinationPath $archivePath `
+            -DisplayName ".NET SDK $Channel (x64)"
+
+        Write-Host 'Extracting the .NET SDK. This can take a moment...' -ForegroundColor Cyan
+        Expand-Archive -LiteralPath $archivePath -DestinationPath $InstallDirectory -Force
+    } catch {
+        throw "Could not install the official .NET SDK from $sdkArchiveUri. Check the internet connection, proxy settings, and available disk space. $($_.Exception.Message)"
+    } finally {
+        if (Test-Path -LiteralPath $archivePath -PathType Leaf) {
+            Remove-Item -LiteralPath $archivePath -Force
+        }
+    }
+}
+
+function Invoke-NetCheckDownloadWithProgress {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [uri]$Uri,
+
+        [Parameter(Mandatory)]
+        [string]$DestinationPath,
+
+        [Parameter(Mandatory)]
+        [string]$DisplayName,
+
+        [ValidateRange(1, 10)]
+        [int]$MaximumAttempts = 3
+    )
+
+    if ([Net.ServicePointManager]::SecurityProtocol -band [Net.SecurityProtocolType]::Tls12) {
+        # TLS 1.2 is already enabled.
+    } else {
+        [Net.ServicePointManager]::SecurityProtocol =
+            [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    }
+
+    $partialPath = "$DestinationPath.partial"
+    for ($attempt = 1; $attempt -le $MaximumAttempts; $attempt++) {
+        try {
+            Invoke-NetCheckDownloadAttempt `
+                -Uri $Uri `
+                -DestinationPath $DestinationPath `
+                -PartialPath $partialPath `
+                -DisplayName $DisplayName
+            return
+        } catch {
+            if (Test-Path -LiteralPath $partialPath -PathType Leaf) {
+                Remove-Item -LiteralPath $partialPath -Force
+            }
+
+            if ($attempt -eq $MaximumAttempts) {
+                throw
+            }
+
+            Write-Warning "Download attempt $attempt of $MaximumAttempts failed: $($_.Exception.Message)"
+            Write-Host "Retrying the download..." -ForegroundColor Yellow
+            Start-Sleep -Seconds 2
+        }
+    }
+}
+
+function Invoke-NetCheckDownloadAttempt {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [uri]$Uri,
+
+        [Parameter(Mandatory)]
+        [string]$DestinationPath,
+
+        [Parameter(Mandatory)]
+        [string]$PartialPath,
+
+        [Parameter(Mandatory)]
+        [string]$DisplayName
+    )
+
+    Add-Type -AssemblyName System.Net.Http
+    $handler = [Net.Http.HttpClientHandler]::new()
+    $handler.UseProxy = $true
+    $handler.DefaultProxyCredentials = [Net.CredentialCache]::DefaultCredentials
+    $client = [Net.Http.HttpClient]::new($handler)
+    $client.Timeout = [TimeSpan]::FromMinutes(20)
+    $headRequest = $null
+    $headResponse = $null
+    $response = $null
+    $sourceStream = $null
+    $destinationStream = $null
+    $progressStarted = $false
+
+    try {
+        $expectedLength = $null
+        try {
+            $headRequest = [Net.Http.HttpRequestMessage]::new([Net.Http.HttpMethod]::Head, $Uri)
+            $headResponse = $client.SendAsync(
+                $headRequest,
+                [Net.Http.HttpCompletionOption]::ResponseHeadersRead
+            ).GetAwaiter().GetResult()
+            if ($headResponse.IsSuccessStatusCode) {
+                $expectedLength = $headResponse.Content.Headers.ContentLength
+            }
+        } catch {
+            # Some proxies and download servers reject HEAD requests. The GET response is the fallback.
+        } finally {
+            if ($null -ne $headResponse) {
+                $headResponse.Dispose()
+                $headResponse = $null
+            }
+            if ($null -ne $headRequest) {
+                $headRequest.Dispose()
+                $headRequest = $null
+            }
         }
 
-        Invoke-WebRequest -Uri $installerUri -OutFile $installerPath -UseBasicParsing
+        $response = $client.GetAsync(
+            $Uri,
+            [Net.Http.HttpCompletionOption]::ResponseHeadersRead
+        ).GetAwaiter().GetResult()
+        $response.EnsureSuccessStatusCode() | Out-Null
+
+        $totalBytes = $response.Content.Headers.ContentLength
+        if ($null -eq $totalBytes -or $totalBytes -le 0) {
+            $totalBytes = $expectedLength
+        }
+        if ($null -eq $totalBytes -or $totalBytes -le 0) {
+            throw 'The download server did not provide the SDK archive size.'
+        }
+
+        $sourceStream = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+        $destinationStream = [IO.File]::Open(
+            $PartialPath,
+            [IO.FileMode]::Create,
+            [IO.FileAccess]::Write,
+            [IO.FileShare]::None
+        )
+
+        $buffer = [byte[]]::new(1MB)
+        $downloadedBytes = [long]0
+        $lastPercentage = 0
+        $totalMegabytes = $totalBytes / 1MB
+        $progressStarted = $true
+        Write-Host -NoNewline (
+            "`rDownloading {0}:   0% (0.0 of {1:N1} MB)" -f
+            $DisplayName,
+            $totalMegabytes
+        )
+
+        while (($bytesRead = $sourceStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+            $destinationStream.Write($buffer, 0, $bytesRead)
+            $downloadedBytes += $bytesRead
+            $percentage = [Math]::Min(
+                100,
+                [int][Math]::Floor(($downloadedBytes * 100.0) / $totalBytes)
+            )
+
+            if ($percentage -ne $lastPercentage) {
+                $downloadedMegabytes = $downloadedBytes / 1MB
+                Write-Host -NoNewline (
+                    "`rDownloading {0}: {1,3}% ({2:N1} of {3:N1} MB)" -f
+                    $DisplayName,
+                    $percentage,
+                    $downloadedMegabytes,
+                    $totalMegabytes
+                )
+                $lastPercentage = $percentage
+            }
+        }
+
+        $destinationStream.Flush()
+        $destinationStream.Dispose()
+        $destinationStream = $null
+
+        if ($downloadedBytes -ne $totalBytes) {
+            throw "The SDK download is incomplete. Expected $totalBytes bytes but received $downloadedBytes bytes."
+        }
+
+        if ($lastPercentage -lt 100) {
+            Write-Host -NoNewline (
+                "`rDownloading {0}: 100% ({1:N1} of {1:N1} MB)" -f
+                $DisplayName,
+                $totalMegabytes
+            )
+        }
+        Write-Host
+
+        Move-Item -LiteralPath $PartialPath -Destination $DestinationPath -Force
     } catch {
-        throw "Could not download the official .NET installer from $installerUri. Check the internet connection and proxy settings. $($_.Exception.Message)"
+        if ($progressStarted) {
+            Write-Host
+        }
+        throw
     } finally {
-        $ProgressPreference = $previousProgressPreference
-    }
-
-    if (-not (Test-Path -LiteralPath $installerPath -PathType Leaf) -or
-        (Get-Item -LiteralPath $installerPath).Length -lt 10KB) {
-        throw 'The downloaded .NET installer is missing or incomplete.'
-    }
-
-    & $installerPath `
-        -Channel $Channel `
-        -Quality GA `
-        -Architecture x64 `
-        -InstallDir $InstallDirectory `
-        -NoPath
-    $installerSucceeded = $?
-    if (-not $installerSucceeded) {
-        throw 'The .NET SDK installer did not complete successfully.'
+        if ($null -ne $destinationStream) {
+            $destinationStream.Dispose()
+        }
+        if ($null -ne $sourceStream) {
+            $sourceStream.Dispose()
+        }
+        if ($null -ne $response) {
+            $response.Dispose()
+        }
+        if ($null -ne $headResponse) {
+            $headResponse.Dispose()
+        }
+        if ($null -ne $headRequest) {
+            $headRequest.Dispose()
+        }
+        $client.Dispose()
+        $handler.Dispose()
     }
 }

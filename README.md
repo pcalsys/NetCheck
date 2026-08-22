@@ -56,6 +56,8 @@ build.cmd
 
 This single command restores dependencies, builds all projects in Release mode, runs all tests, and creates the self-contained Windows x64 application. It also bypasses a restrictive local PowerShell execution policy only for the checked-in build script.
 
+On a computer without a compatible .NET SDK, the first build downloads the official SDK into `.dotnet` and shows live progress from 0% to 100% in the command window before extraction begins.
+
 The finished files are:
 
 - `artifacts\publish\win-x64\NetCheck.exe` — directly runnable application

@@ -2,6 +2,8 @@
 
 NetCheck is a native Windows desktop application that explains *why* a computer has no internet access, limited connectivity, or an unstable connection. It performs a read-only assessment, correlates the evidence, presents a plain-language diagnosis, and can apply an explicitly approved repair plan for supported Windows configuration problems.
 
+![NetCheck dashboard showing a successful network diagnosis](docs/images/netcheck-dashboard.png)
+
 ## What it checks
 
 | Stage | What NetCheck determines |

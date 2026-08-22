@@ -95,7 +95,7 @@
                     </Border>
                 </StackPanel>
 
-                <TextBlock Grid.Row="4" Text="VERSION 1.3" Foreground="#718099" FontSize="8" FontWeight="Bold"
+                <TextBlock Grid.Row="4" Text="VERSION 1.0" Foreground="#718099" FontSize="8" FontWeight="Bold"
                            Margin="24,5,0,20" TextWrapping="NoWrap" />
             </Grid>
         </Border>

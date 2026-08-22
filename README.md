@@ -2,17 +2,6 @@
 
 NetCheck is a native Windows desktop application that explains *why* a computer has no internet access, limited connectivity, or an unstable connection. It performs a read-only assessment, correlates the evidence, presents a plain-language diagnosis, and can apply an explicitly approved repair plan for supported Windows configuration problems.
 
-## What is new in 1.3
-
-- Complete English and German localization across the shell, dashboard, diagnostics, history, settings, dialogs, and exported reports
-- Immediate language switching while retaining language-neutral saved diagnostic data
-- Simplified application shell without the former product badge, tagline, or private/local status badge
-- High-contrast white language choices and a concise `created by pcalsys` credit
-- A prominent experienced-users-only warning for advanced diagnostic settings
-- The evidence-based, confirmation-gated repair workflow introduced in 1.2 remains unchanged
-
-See the [changelog](CHANGELOG.md) for release details.
-
 ## What it checks
 
 | Stage | What NetCheck determines |
@@ -65,8 +54,8 @@ This single command restores dependencies, builds all projects in Release mode, 
 The finished files are:
 
 - `artifacts\publish\win-x64\NetCheck.exe` — directly runnable application
-- `artifacts\NetCheck-1.3.0-win-x64.zip` — distributable package
-- `artifacts\NetCheck-1.3.0-win-x64.zip.sha256` — SHA-256 checksum
+- `artifacts\NetCheck-1.0.0-win-x64.zip` — distributable package
+- `artifacts\NetCheck-1.0.0-win-x64.zip.sha256` — SHA-256 checksum
 
 Start the locally built application with:
 

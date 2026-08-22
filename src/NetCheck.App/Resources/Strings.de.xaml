@@ -15,7 +15,7 @@
     <sys:String x:Key="SpeedTestAutomationName">Internet-Speedtest</sys:String>
     <sys:String x:Key="SpeedTestEyebrow">VERBINDUNGSLEISTUNG</sys:String>
     <sys:String x:Key="SpeedTestTitle">Wie schnell ist diese Verbindung?</sys:String>
-    <sys:String x:Key="SpeedTestSubtitle">Misst die maximal beobachtete Download- und Uploadgeschwindigkeit, den Durchschnitt und die Latenz.</sys:String>
+    <sys:String x:Key="SpeedTestSubtitle">Misst Download, Upload und Latenz rund 30 Sekunden lang für eine verlässlichere Einschätzung.</sys:String>
     <sys:String x:Key="StartSpeedTest">Speedtest starten</sys:String>
     <sys:String x:Key="CurrentMeasurement">AKTUELLE MESSUNG</sys:String>
     <sys:String x:Key="MeasuredSpeedTitle">Ihre gemessene Geschwindigkeit</sys:String>
@@ -30,9 +30,9 @@
     <sys:String x:Key="SpeedTestAccuracyTitle">Für ein brauchbares Ergebnis</sys:String>
     <sys:String x:Key="SpeedTestAccuracyText">Pausieren Sie Downloads und VPN-Verkehr. Ethernet liefert den klarsten Vergleich; WLAN und andere Geräte beeinflussen das Ergebnis.</sys:String>
     <sys:String x:Key="SpeedTestDataTitle">Kontrollierter Datenverbrauch</sys:String>
-    <sys:String x:Key="SpeedTestDataText">Der Test überträgt bis zu etwa 210 MB über Cloudflare. Der tatsächliche Verbrauch passt sich Ihrer Geschwindigkeit an und ist meist geringer.</sys:String>
+    <sys:String x:Key="SpeedTestDataText">Der etwa 30-sekündige Test kann bis zu rund 200 MB über Cloudflare übertragen. Vermeiden Sie getaktete Verbindungen.</sys:String>
     <sys:String x:Key="SpeedTestPrivacyTitle">Privat in NetCheck</sys:String>
-    <sys:String x:Key="SpeedTestPrivacyText">NetCheck speichert oder überträgt das Ergebnis nicht. Der Testverkehr geht direkt an die Speedtest-Endpunkte von Cloudflare.</sys:String>
+    <sys:String x:Key="SpeedTestPrivacyText">NetCheck speichert das Ergebnis nur lokal und lädt es nicht als NetCheck-Telemetrie hoch. Cloudflare erhält als Endpunktbetreiber Ihre IP-Adresse.</sys:String>
 
     <sys:String x:Key="DashboardAutomationName">Übersicht der Netzwerkdiagnose</sys:String>
     <sys:String x:Key="DashboardEyebrow">VERBINDUNGSSTATUS</sys:String>
@@ -62,20 +62,22 @@
     <sys:String x:Key="DiagnosticChecks">Diagnoseprüfungen</sys:String>
     <sys:String x:Key="DiagnosticChecksSubtitle">Öffnen Sie eine Prüfung, um die technischen Details anzuzeigen.</sys:String>
 
-    <sys:String x:Key="HistoryAutomationName">Diagnoseverlauf</sys:String>
-    <sys:String x:Key="HistoryEyebrow">IHRE BERICHTE</sys:String>
-    <sys:String x:Key="HistoryTitle">Alle Prüfungen übersichtlich gespeichert</sys:String>
-    <sys:String x:Key="HistorySubtitle">Vergleichen Sie frühere Diagnosen, prüfen Sie Details erneut oder exportieren Sie einen Bericht für den Support.</sys:String>
+    <sys:String x:Key="HistoryAutomationName">Lokaler Aktivitätsverlauf</sys:String>
+    <sys:String x:Key="HistoryEyebrow">LOKALE AKTIVITÄT</sys:String>
+    <sys:String x:Key="HistoryTitle">Alle NetCheck-Aktivitäten übersichtlich gespeichert</sys:String>
+    <sys:String x:Key="HistorySubtitle">Prüfen Sie Diagnosen, Speedtest-Ergebnisse, Einstellungsänderungen und Sprachwechsel, die auf diesem Computer gespeichert sind.</sys:String>
     <sys:String x:Key="Refresh">Aktualisieren</sys:String>
     <sys:String x:Key="ClearHistory">Verlauf löschen</sys:String>
-    <sys:String x:Key="EmptyHistoryTitle">Ihr Verlauf wartet auf die erste Prüfung</sys:String>
-    <sys:String x:Key="EmptyHistoryText">Führen Sie eine Netzwerkprüfung aus. Die Diagnose erscheint anschließend automatisch hier und bleibt auf diesem Computer.</sys:String>
+    <sys:String x:Key="EmptyHistoryTitle">Ihr lokaler Verlauf ist bereit</sys:String>
+    <sys:String x:Key="EmptyHistoryText">Diagnosen, Speedtests und Konfigurationsänderungen erscheinen automatisch hier und bleiben auf diesem Computer.</sys:String>
     <sys:String x:Key="RecentDiagnostics">LETZTE DIAGNOSEN</sys:String>
+    <sys:String x:Key="RecentActivity">LETZTE AKTIVITÄTEN</sys:String>
     <sys:String x:Key="DiagnosisLabel">DIAGNOSE</sys:String>
     <sys:String x:Key="ExportReport">Bericht exportieren</sys:String>
     <sys:String x:Key="ExportSelectedAutomation">Ausgewählten Bericht exportieren</sys:String>
     <sys:String x:Key="DurationMetric">DAUER</sys:String>
     <sys:String x:Key="ChecksInReport">Prüfungen in diesem Bericht</sys:String>
+    <sys:String x:Key="ChangedValues">Geänderte Werte</sys:String>
 
     <sys:String x:Key="SettingsAutomationName">NetCheck-Einstellungen</sys:String>
     <sys:String x:Key="SettingsEyebrow">ERWEITERTE KONFIGURATION</sys:String>

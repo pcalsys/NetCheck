@@ -11,6 +11,7 @@ namespace NetCheck.App.ViewModels;
 public sealed class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsStore _settingsStore;
+    private readonly IActivityHistoryStore _activityHistoryStore;
     private readonly IMessageService _messageService;
     private readonly LocalizationService _text;
     private readonly FileLogger _logger;
@@ -31,11 +32,13 @@ public sealed class SettingsViewModel : ObservableObject
 
     public SettingsViewModel(
         ISettingsStore settingsStore,
+        IActivityHistoryStore activityHistoryStore,
         IMessageService messageService,
         LocalizationService text,
         FileLogger logger)
     {
         _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
+        _activityHistoryStore = activityHistoryStore ?? throw new ArgumentNullException(nameof(activityHistoryStore));
         _messageService = messageService ?? throw new ArgumentNullException(nameof(messageService));
         _text = text ?? throw new ArgumentNullException(nameof(text));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -165,9 +168,11 @@ public sealed class SettingsViewModel : ObservableObject
         IsBusy = true;
         try
         {
+            var changes = DiagnosticOptionsChangeTracker.Compare(_loaded, settings!);
             await _settingsStore.SaveAsync(settings!).ConfigureAwait(true);
             _loaded = settings!;
             Apply(_loaded);
+            await SaveChangesToHistoryAsync(changes).ConfigureAwait(true);
             SetStatusMessage("Settings saved. They will be used for the next diagnostic.");
         }
         finally
@@ -248,6 +253,28 @@ public sealed class SettingsViewModel : ObservableObject
     {
         Apply(new DiagnosticOptions());
         SetStatusMessage("Defaults restored in the form. Choose Save settings to apply them.");
+    }
+
+    private async Task SaveChangesToHistoryAsync(IReadOnlyList<SettingChange> changes)
+    {
+        if (changes.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            await _activityHistoryStore.SaveAsync(new ActivityHistoryEntry
+            {
+                Kind = ActivityHistoryKind.SettingsChanged,
+                SettingChanges = changes
+            }).ConfigureAwait(true);
+        }
+        catch (Exception exception)
+        {
+            // Saving the settings remains successful even if the supplementary audit entry fails.
+            _logger.Error("Could not save the settings change to local history.", exception);
+        }
     }
 
     private void Apply(DiagnosticOptions settings)

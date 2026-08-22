@@ -38,7 +38,7 @@ public sealed class CloudflareSpeedTestService : ISpeedTestService, IDisposable
         {
             var latency = await MeasureLatencyAsync(progress, cancellationToken).ConfigureAwait(false);
 
-            var downloadProbe = await MeasureSingleDownloadAsync(
+            var downloadProbe = await MeasureParallelDownloadProbeAsync(
                     _options.DownloadProbeBytes,
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -54,13 +54,13 @@ public sealed class CloudflareSpeedTestService : ISpeedTestService, IDisposable
                 _options.DownloadTargetDuration,
                 _options.MinimumDownloadBytes,
                 _options.MaximumDownloadBytes);
-            var download = await MeasureDownloadBatchAsync(
+            var download = await MeasureDownloadWindowAsync(
                     downloadTargetBytes,
                     progress,
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            var uploadProbe = await MeasureSingleUploadAsync(
+            var uploadProbe = await MeasureParallelUploadProbeAsync(
                     _options.UploadProbeBytes,
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -76,7 +76,7 @@ public sealed class CloudflareSpeedTestService : ISpeedTestService, IDisposable
                 _options.UploadTargetDuration,
                 _options.MinimumUploadBytes,
                 _options.MaximumUploadBytes);
-            var upload = await MeasureUploadBatchAsync(
+            var upload = await MeasureUploadWindowAsync(
                     uploadTargetBytes,
                     progress,
                     cancellationToken)
@@ -170,33 +170,46 @@ public sealed class CloudflareSpeedTestService : ISpeedTestService, IDisposable
             : samples[middle];
     }
 
-    private async Task<SingleMeasurement> MeasureSingleDownloadAsync(
-        int bytes,
+    private Task<SingleMeasurement> MeasureParallelDownloadProbeAsync(
+        int bytesPerTransfer,
+        CancellationToken cancellationToken) => MeasureParallelProbeAsync(
+            bytesPerTransfer,
+            _options.DownloadParallelism,
+            DownloadOnceAsync,
+            cancellationToken);
+
+    private Task<SingleMeasurement> MeasureParallelUploadProbeAsync(
+        int bytesPerTransfer,
+        CancellationToken cancellationToken) => MeasureParallelProbeAsync(
+            bytesPerTransfer,
+            _options.UploadParallelism,
+            UploadOnceAsync,
+            cancellationToken);
+
+    private static async Task<SingleMeasurement> MeasureParallelProbeAsync(
+        int bytesPerTransfer,
+        int parallelism,
+        Func<int, Action<int>?, CancellationToken, Task> transfer,
         CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
-        await DownloadOnceAsync(bytes, null, cancellationToken).ConfigureAwait(false);
+        await Task.WhenAll(Enumerable.Range(0, parallelism)
+                .Select(_ => transfer(bytesPerTransfer, null, cancellationToken)))
+            .ConfigureAwait(false);
         stopwatch.Stop();
-        return new SingleMeasurement(bytes, ToMegabitsPerSecond(bytes, stopwatch.Elapsed));
+        var totalBytes = checked((long)bytesPerTransfer * parallelism);
+        return new SingleMeasurement(totalBytes, ToMegabitsPerSecond(totalBytes, stopwatch.Elapsed));
     }
 
-    private async Task<SingleMeasurement> MeasureSingleUploadAsync(
-        int bytes,
-        CancellationToken cancellationToken)
-    {
-        var stopwatch = Stopwatch.StartNew();
-        await UploadOnceAsync(bytes, null, cancellationToken).ConfigureAwait(false);
-        stopwatch.Stop();
-        return new SingleMeasurement(bytes, ToMegabitsPerSecond(bytes, stopwatch.Elapsed));
-    }
-
-    private Task<BatchMeasurement> MeasureDownloadBatchAsync(
+    private Task<BatchMeasurement> MeasureDownloadWindowAsync(
         long totalBytes,
         IProgress<SpeedTestProgress>? progress,
         CancellationToken cancellationToken) =>
-        MeasureBatchAsync(
+        MeasureWindowAsync(
             totalBytes,
             _options.DownloadParallelism,
+            _options.DownloadRoundCount,
+            _options.DownloadTargetDuration,
             SpeedTestPhase.Download,
             20,
             45,
@@ -204,13 +217,15 @@ public sealed class CloudflareSpeedTestService : ISpeedTestService, IDisposable
             DownloadOnceAsync,
             cancellationToken);
 
-    private Task<BatchMeasurement> MeasureUploadBatchAsync(
+    private Task<BatchMeasurement> MeasureUploadWindowAsync(
         long totalBytes,
         IProgress<SpeedTestProgress>? progress,
         CancellationToken cancellationToken) =>
-        MeasureBatchAsync(
+        MeasureWindowAsync(
             totalBytes,
             _options.UploadParallelism,
+            _options.UploadRoundCount,
+            _options.UploadTargetDuration,
             SpeedTestPhase.Upload,
             70,
             25,
@@ -218,12 +233,75 @@ public sealed class CloudflareSpeedTestService : ISpeedTestService, IDisposable
             UploadOnceAsync,
             cancellationToken);
 
+    private async Task<BatchMeasurement> MeasureWindowAsync(
+        long totalBytes,
+        int parallelism,
+        int roundCount,
+        TimeSpan targetDuration,
+        SpeedTestPhase phase,
+        int progressStart,
+        int progressRange,
+        IProgress<SpeedTestProgress>? progress,
+        Func<int, Action<int>?, CancellationToken, Task> transfer,
+        CancellationToken cancellationToken)
+    {
+        var roundSizes = CreateTransferSizes(totalBytes, roundCount);
+        var windowStopwatch = Stopwatch.StartNew();
+        var activeDuration = TimeSpan.Zero;
+        var completedBytes = 0L;
+        var peakMegabitsPerSecond = 0d;
+
+        for (var roundIndex = 0; roundIndex < roundSizes.Length; roundIndex++)
+        {
+            var round = await MeasureBatchAsync(
+                    roundSizes[roundIndex],
+                    parallelism,
+                    phase,
+                    progressStart,
+                    progressRange,
+                    completedBytes,
+                    totalBytes,
+                    progress,
+                    transfer,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            completedBytes += round.Bytes;
+            activeDuration += round.Duration;
+            peakMegabitsPerSecond = Math.Max(peakMegabitsPerSecond, round.PeakMegabitsPerSecond);
+
+            var scheduledRoundEnd = TimeSpan.FromTicks(
+                targetDuration.Ticks * (roundIndex + 1) / roundSizes.Length);
+            var remaining = scheduledRoundEnd - windowStopwatch.Elapsed;
+            if (remaining > TimeSpan.Zero)
+            {
+                ReportTransferProgress(
+                    phase,
+                    progressStart,
+                    progressRange,
+                    completedBytes,
+                    totalBytes,
+                    0,
+                    progress);
+                await Task.Delay(remaining, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        windowStopwatch.Stop();
+        return new BatchMeasurement(
+            completedBytes,
+            ToMegabitsPerSecond(completedBytes, activeDuration),
+            peakMegabitsPerSecond,
+            activeDuration);
+    }
+
     private async Task<BatchMeasurement> MeasureBatchAsync(
         long totalBytes,
         int parallelism,
         SpeedTestPhase phase,
         int progressStart,
         int progressRange,
+        long previouslyTransferredBytes,
+        long phaseTotalBytes,
         IProgress<SpeedTestProgress>? progress,
         Func<int, Action<int>?, CancellationToken, Task> transfer,
         CancellationToken cancellationToken)
@@ -264,8 +342,8 @@ public sealed class CloudflareSpeedTestService : ISpeedTestService, IDisposable
                 phase,
                 progressStart,
                 progressRange,
-                currentBytes,
-                totalBytes,
+                previouslyTransferredBytes + currentBytes,
+                phaseTotalBytes,
                 ToMegabitsPerSecond(currentBytes, currentElapsed),
                 progress);
         }
@@ -287,15 +365,16 @@ public sealed class CloudflareSpeedTestService : ISpeedTestService, IDisposable
             phase,
             progressStart,
             progressRange,
-            finalBytes,
-            totalBytes,
+            previouslyTransferredBytes + finalBytes,
+            phaseTotalBytes,
             averageMegabitsPerSecond,
             progress);
 
         return new BatchMeasurement(
             finalBytes,
             averageMegabitsPerSecond,
-            peakMegabitsPerSecond);
+            peakMegabitsPerSecond,
+            stopwatch.Elapsed);
     }
 
     private async Task DownloadOnceAsync(
@@ -513,7 +592,11 @@ public sealed class CloudflareSpeedTestService : ISpeedTestService, IDisposable
             || options.MaximumDownloadBytes > int.MaxValue * (long)options.DownloadParallelism
             || options.MaximumUploadBytes > int.MaxValue * (long)options.UploadParallelism
             || options.DownloadParallelism < 1
+            || options.DownloadRoundCount < 1
             || options.UploadParallelism < 1
+            || options.UploadRoundCount < 1
+            || options.MinimumDownloadBytes < options.DownloadParallelism * (long)options.DownloadRoundCount
+            || options.MinimumUploadBytes < options.UploadParallelism * (long)options.UploadRoundCount
             || options.DownloadTargetDuration <= TimeSpan.Zero
             || options.UploadTargetDuration <= TimeSpan.Zero
             || options.SampleInterval <= TimeSpan.Zero
@@ -528,7 +611,8 @@ public sealed class CloudflareSpeedTestService : ISpeedTestService, IDisposable
     private sealed record BatchMeasurement(
         long Bytes,
         double MegabitsPerSecond,
-        double PeakMegabitsPerSecond);
+        double PeakMegabitsPerSecond,
+        TimeSpan Duration);
 
     private sealed class GeneratedUploadContent : HttpContent
     {

@@ -15,7 +15,7 @@
     <sys:String x:Key="SpeedTestAutomationName">Internet speed test</sys:String>
     <sys:String x:Key="SpeedTestEyebrow">CONNECTION PERFORMANCE</sys:String>
     <sys:String x:Key="SpeedTestTitle">How fast is this connection?</sys:String>
-    <sys:String x:Key="SpeedTestSubtitle">Measure the maximum observed download and upload speed, average throughput, and latency.</sys:String>
+    <sys:String x:Key="SpeedTestSubtitle">Measure download, upload, and latency over an approximately 30-second test for a more reliable estimate.</sys:String>
     <sys:String x:Key="StartSpeedTest">Start speed test</sys:String>
     <sys:String x:Key="CurrentMeasurement">CURRENT MEASUREMENT</sys:String>
     <sys:String x:Key="MeasuredSpeedTitle">Your measured speed</sys:String>
@@ -30,9 +30,9 @@
     <sys:String x:Key="SpeedTestAccuracyTitle">For a useful result</sys:String>
     <sys:String x:Key="SpeedTestAccuracyText">Pause downloads and VPN traffic. Ethernet gives the clearest comparison; Wi-Fi and other devices affect the result.</sys:String>
     <sys:String x:Key="SpeedTestDataTitle">Controlled data use</sys:String>
-    <sys:String x:Key="SpeedTestDataText">The test transfers up to about 210 MB through Cloudflare. Actual use adapts to your speed and is usually lower.</sys:String>
+    <sys:String x:Key="SpeedTestDataText">The approximately 30-second test can transfer up to about 200 MB through Cloudflare. Avoid metered connections.</sys:String>
     <sys:String x:Key="SpeedTestPrivacyTitle">Private in NetCheck</sys:String>
-    <sys:String x:Key="SpeedTestPrivacyText">NetCheck does not save or upload the result. Test traffic goes directly to Cloudflare's speed-test endpoints.</sys:String>
+    <sys:String x:Key="SpeedTestPrivacyText">NetCheck saves the result only in local history and does not upload it as NetCheck telemetry. Cloudflare receives your IP as the endpoint operator.</sys:String>
 
     <sys:String x:Key="DashboardAutomationName">Network diagnostics dashboard</sys:String>
     <sys:String x:Key="DashboardEyebrow">CONNECTION HEALTH</sys:String>
@@ -62,20 +62,22 @@
     <sys:String x:Key="DiagnosticChecks">Diagnostic checks</sys:String>
     <sys:String x:Key="DiagnosticChecksSubtitle">Open a check to see the technical evidence behind it.</sys:String>
 
-    <sys:String x:Key="HistoryAutomationName">Diagnostic history</sys:String>
-    <sys:String x:Key="HistoryEyebrow">YOUR REPORTS</sys:String>
-    <sys:String x:Key="HistoryTitle">A clear record of every check</sys:String>
-    <sys:String x:Key="HistorySubtitle">Compare past diagnoses, revisit the evidence, or export a report when you need help.</sys:String>
+    <sys:String x:Key="HistoryAutomationName">Local activity history</sys:String>
+    <sys:String x:Key="HistoryEyebrow">LOCAL ACTIVITY</sys:String>
+    <sys:String x:Key="HistoryTitle">A clear record of NetCheck activity</sys:String>
+    <sys:String x:Key="HistorySubtitle">Review diagnostics, speed-test results, settings changes, and language switches stored on this computer.</sys:String>
     <sys:String x:Key="Refresh">Refresh</sys:String>
     <sys:String x:Key="ClearHistory">Clear history</sys:String>
-    <sys:String x:Key="EmptyHistoryTitle">Your history is ready when you are</sys:String>
-    <sys:String x:Key="EmptyHistoryText">Complete a network check and its diagnosis will appear here automatically. Reports stay on this computer.</sys:String>
+    <sys:String x:Key="EmptyHistoryTitle">Your local history is ready</sys:String>
+    <sys:String x:Key="EmptyHistoryText">Diagnostics, speed tests, and configuration changes will appear here automatically and stay on this computer.</sys:String>
     <sys:String x:Key="RecentDiagnostics">RECENT DIAGNOSTICS</sys:String>
+    <sys:String x:Key="RecentActivity">RECENT ACTIVITY</sys:String>
     <sys:String x:Key="DiagnosisLabel">DIAGNOSIS</sys:String>
     <sys:String x:Key="ExportReport">Export report</sys:String>
     <sys:String x:Key="ExportSelectedAutomation">Export selected report</sys:String>
     <sys:String x:Key="DurationMetric">DURATION</sys:String>
     <sys:String x:Key="ChecksInReport">Checks in this report</sys:String>
+    <sys:String x:Key="ChangedValues">Changed values</sys:String>
 
     <sys:String x:Key="SettingsAutomationName">NetCheck settings</sys:String>
     <sys:String x:Key="SettingsEyebrow">ADVANCED CONFIGURATION</sys:String>

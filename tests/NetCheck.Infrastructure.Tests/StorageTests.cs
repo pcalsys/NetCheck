@@ -25,6 +25,64 @@ public sealed class StorageTests
     }
 
     [Fact]
+    public async Task ActivityHistoryStore_RoundTripsSpeedTestsAndSettingChanges()
+    {
+        using var directory = new TemporaryDirectory();
+        var paths = new AppDataPaths(directory.Path);
+        using var store = new JsonActivityHistoryStore(paths);
+        var speedResult = new SpeedTestResult(
+            12.5,
+            95.4,
+            110.8,
+            35.2,
+            39.1,
+            100_000_000,
+            40_000_000,
+            TimeSpan.FromSeconds(29.4),
+            "Cloudflare",
+            DateTimeOffset.UtcNow.AddMinutes(-1));
+        var speedEntry = new ActivityHistoryEntry
+        {
+            OccurredAtUtc = speedResult.CompletedAtUtc,
+            Kind = ActivityHistoryKind.SpeedTest,
+            SpeedTestResult = speedResult
+        };
+        var settingsEntry = new ActivityHistoryEntry
+        {
+            OccurredAtUtc = DateTimeOffset.UtcNow,
+            Kind = ActivityHistoryKind.SettingsChanged,
+            SettingChanges =
+            [
+                new SettingChange(nameof(DiagnosticOptions.PingTimeoutMilliseconds), "1500", "2000")
+            ]
+        };
+
+        await store.SaveAsync(speedEntry);
+        await store.SaveAsync(settingsEntry);
+        var entries = await store.GetRecentAsync(10);
+
+        Assert.Equal(2, entries.Count);
+        Assert.Equal(settingsEntry.Id, entries[0].Id);
+        Assert.Equal(speedEntry.Id, entries[1].Id);
+        Assert.Equal(speedResult, entries[1].SpeedTestResult);
+
+        await store.ClearAsync();
+        Assert.Empty(await store.GetRecentAsync(10));
+    }
+
+    [Fact]
+    public async Task ActivityHistoryStore_RejectsIncompleteEntries()
+    {
+        using var directory = new TemporaryDirectory();
+        using var store = new JsonActivityHistoryStore(new AppDataPaths(directory.Path));
+
+        await Assert.ThrowsAsync<ArgumentException>(() => store.SaveAsync(new ActivityHistoryEntry
+        {
+            Kind = ActivityHistoryKind.SettingsChanged
+        }));
+    }
+
+    [Fact]
     public async Task SettingsStore_NormalizesUnsafeRangesAndDuplicateTargets()
     {
         using var directory = new TemporaryDirectory();

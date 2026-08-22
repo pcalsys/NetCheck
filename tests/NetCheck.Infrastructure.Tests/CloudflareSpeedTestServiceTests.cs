@@ -8,6 +8,21 @@ namespace NetCheck.Infrastructure.Tests;
 public sealed class CloudflareSpeedTestServiceTests
 {
     [Fact]
+    public void DefaultOptions_TargetAnApproximatelyThirtySecondMeasurement()
+    {
+        var options = new CloudflareSpeedTestOptions();
+
+        Assert.Equal(TimeSpan.FromSeconds(17), options.DownloadTargetDuration);
+        Assert.Equal(TimeSpan.FromSeconds(11), options.UploadTargetDuration);
+        Assert.Equal(28, (options.DownloadTargetDuration + options.UploadTargetDuration).TotalSeconds);
+        Assert.Equal(199_500_000,
+            options.MaximumDownloadBytes
+            + options.MaximumUploadBytes
+            + ((long)options.DownloadProbeBytes * options.DownloadParallelism)
+            + ((long)options.UploadProbeBytes * options.UploadParallelism));
+    }
+
+    [Fact]
     public async Task RunAsync_MeasuresAllPhasesAndHonorsConfiguredTrafficCaps()
     {
         var requests = new ConcurrentBag<(HttpMethod Method, int Bytes)>();
@@ -39,16 +54,28 @@ public sealed class CloudflareSpeedTestServiceTests
         Assert.True(result.UploadMegabitsPerSecond > 0);
         Assert.True(result.PeakUploadMegabitsPerSecond >= result.UploadMegabitsPerSecond);
         Assert.True(result.LatencyMilliseconds >= 0);
-        Assert.Equal(options.DownloadProbeBytes + options.MaximumDownloadBytes, result.DownloadBytes);
-        Assert.Equal(options.UploadProbeBytes + options.MaximumUploadBytes, result.UploadBytes);
+        Assert.True(
+            result.Duration >= options.DownloadTargetDuration + options.UploadTargetDuration - TimeSpan.FromMilliseconds(5),
+            $"The observation window ended too early after {result.Duration.TotalMilliseconds:N1} ms.");
+        Assert.Equal(
+            (long)options.DownloadProbeBytes * options.DownloadParallelism + options.MaximumDownloadBytes,
+            result.DownloadBytes);
+        Assert.Equal(
+            (long)options.UploadProbeBytes * options.UploadParallelism + options.MaximumUploadBytes,
+            result.UploadBytes);
         Assert.Equal("Cloudflare", result.Provider);
         Assert.Contains(progress, item => item.Phase == SpeedTestPhase.Latency);
         Assert.Contains(progress, item => item.Phase == SpeedTestPhase.Download);
         Assert.Contains(progress, item => item.Phase == SpeedTestPhase.Upload);
         Assert.Contains(progress, item => item is { Phase: SpeedTestPhase.Complete, Percentage: 100 });
-        Assert.Equal(1 + options.LatencySampleCount + 1 + options.DownloadParallelism,
+        Assert.Equal(
+            1 + options.LatencySampleCount
+            + options.DownloadParallelism
+            + (options.DownloadRoundCount * options.DownloadParallelism),
             requests.Count(item => item.Method == HttpMethod.Get));
-        Assert.Equal(1 + options.UploadParallelism,
+        Assert.Equal(
+            options.UploadParallelism
+            + (options.UploadRoundCount * options.UploadParallelism),
             requests.Count(item => item.Method == HttpMethod.Post));
         Assert.All(versionPolicies, item =>
         {
@@ -123,11 +150,13 @@ public sealed class CloudflareSpeedTestServiceTests
         MaximumDownloadBytes = 2048,
         DownloadTargetDuration = TimeSpan.FromMilliseconds(10),
         DownloadParallelism = 2,
+        DownloadRoundCount = 2,
         UploadProbeBytes = 96,
         MinimumUploadBytes = 1536,
         MaximumUploadBytes = 1536,
         UploadTargetDuration = TimeSpan.FromMilliseconds(10),
         UploadParallelism = 2,
+        UploadRoundCount = 2,
         SampleInterval = TimeSpan.FromMilliseconds(1),
         RequestTimeout = TimeSpan.FromSeconds(2)
     };
@@ -144,11 +173,12 @@ public sealed class CloudflareSpeedTestServiceTests
     private static HttpResponseMessage CreateResponse(
         HttpRequestMessage request,
         HttpStatusCode statusCode,
-        byte[] content) => new(statusCode)
-    {
-        RequestMessage = request,
-        Content = new ByteArrayContent(content)
-    };
+        byte[] content) =>
+        new(statusCode)
+        {
+            RequestMessage = request,
+            Content = new ByteArrayContent(content)
+        };
 
     private sealed class DelegateHandler(
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler) : HttpMessageHandler

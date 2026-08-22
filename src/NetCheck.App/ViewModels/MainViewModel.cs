@@ -1,6 +1,7 @@
 using NetCheck.App.Mvvm;
 using NetCheck.App.Localization;
 using NetCheck.Core.Abstractions;
+using NetCheck.Core.Models;
 using NetCheck.Infrastructure.Logging;
 
 namespace NetCheck.App.ViewModels;
@@ -12,6 +13,7 @@ public sealed class MainViewModel : ObservableObject
     private readonly HistoryViewModel _history;
     private readonly SettingsViewModel _settings;
     private readonly ISettingsStore _settingsStore;
+    private readonly IActivityHistoryStore _activityHistoryStore;
     private readonly LocalizationService _text;
     private readonly FileLogger _logger;
     private ObservableObject _currentPage;
@@ -24,6 +26,7 @@ public sealed class MainViewModel : ObservableObject
         HistoryViewModel history,
         SettingsViewModel settings,
         ISettingsStore settingsStore,
+        IActivityHistoryStore activityHistoryStore,
         LocalizationService text,
         FileLogger logger)
     {
@@ -32,6 +35,7 @@ public sealed class MainViewModel : ObservableObject
         _history = history ?? throw new ArgumentNullException(nameof(history));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
+        _activityHistoryStore = activityHistoryStore ?? throw new ArgumentNullException(nameof(activityHistoryStore));
         _text = text ?? throw new ArgumentNullException(nameof(text));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _currentPage = dashboard;
@@ -139,15 +143,43 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
+        var previousLanguage = _menuLanguage;
         ApplyMenuLanguage(normalizedLanguage);
         try
         {
             var settings = await _settingsStore.LoadAsync().ConfigureAwait(true);
             await _settingsStore.SaveAsync(settings with { MenuLanguage = normalizedLanguage }).ConfigureAwait(true);
+            await SaveLanguageChangeToHistoryAsync(previousLanguage, normalizedLanguage).ConfigureAwait(true);
+            if (_selectedPage == MainPage.History)
+            {
+                await _history.LoadAsync().ConfigureAwait(true);
+            }
         }
         catch (Exception exception)
         {
             _logger.Error("Could not save the menu language preference.", exception);
+        }
+    }
+
+    private async Task SaveLanguageChangeToHistoryAsync(string previousLanguage, string newLanguage)
+    {
+        try
+        {
+            await _activityHistoryStore.SaveAsync(new ActivityHistoryEntry
+            {
+                Kind = ActivityHistoryKind.LanguageChanged,
+                SettingChanges =
+                [
+                    new SettingChange(
+                        nameof(DiagnosticOptions.MenuLanguage),
+                        previousLanguage,
+                        newLanguage)
+                ]
+            }).ConfigureAwait(true);
+        }
+        catch (Exception exception)
+        {
+            _logger.Error("Could not save the language change to local history.", exception);
         }
     }
 

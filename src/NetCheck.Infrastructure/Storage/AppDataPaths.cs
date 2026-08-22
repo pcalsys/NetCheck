@@ -13,8 +13,9 @@ public sealed class AppDataPaths
 
     public string ReportsDirectory => Path.Combine(RootDirectory, "Reports");
 
+    public string ActivitiesDirectory => Path.Combine(RootDirectory, "Activities");
+
     public string SettingsFile => Path.Combine(RootDirectory, "settings.json");
 
     public string LogFile => Path.Combine(RootDirectory, "NetCheck.log");
 }
-

@@ -36,7 +36,7 @@
         </Grid>
 
         <Border Grid.Row="1" Style="{StaticResource CardStyle}"
-                Visibility="{Binding HasReports, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                Visibility="{Binding HasItems, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="430">
                 <Border Width="64" Height="64" CornerRadius="20" Background="{StaticResource PrimarySoftBrush}"
                         HorizontalAlignment="Center">
@@ -51,7 +51,7 @@
             </StackPanel>
         </Border>
 
-        <Grid Grid.Row="1" Visibility="{Binding HasReports, Converter={StaticResource BooleanToVisibilityConverter}}">
+        <Grid Grid.Row="1" Visibility="{Binding HasItems, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="340" />
                 <ColumnDefinition Width="18" />
@@ -65,15 +65,15 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid Margin="8,6,8,13">
-                        <TextBlock Text="{DynamicResource RecentDiagnostics}" Style="{StaticResource MetricLabelStyle}" />
+                        <TextBlock Text="{DynamicResource RecentActivity}" Style="{StaticResource MetricLabelStyle}" />
                         <Border HorizontalAlignment="Right" Background="{StaticResource PrimarySoftBrush}"
                                 CornerRadius="10" Padding="8,3">
-                            <TextBlock Text="{Binding Reports.Count}" Foreground="{StaticResource PrimaryBrush}"
+                            <TextBlock Text="{Binding Items.Count}" Foreground="{StaticResource PrimaryBrush}"
                                        FontSize="10" FontWeight="Bold" TextWrapping="NoWrap" />
                         </Border>
                     </Grid>
-                    <ListBox Grid.Row="1" ItemsSource="{Binding Reports}"
-                             SelectedItem="{Binding SelectedReport}"
+                    <ListBox Grid.Row="1" ItemsSource="{Binding Items}"
+                             SelectedItem="{Binding SelectedItem}"
                              BorderThickness="0" Background="Transparent"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ItemTemplate>
@@ -86,15 +86,15 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Border Width="34" Height="34" CornerRadius="11"
-                                                Background="{Binding Diagnosis.Outcome, Converter={StaticResource OutcomeToTintBrushConverter}}"
+                                                Background="{Binding Outcome, Converter={StaticResource OutcomeToTintBrushConverter}}"
                                                 VerticalAlignment="Top">
                                             <Ellipse Width="9" Height="9"
-                                                     Fill="{Binding Diagnosis.Outcome, Converter={StaticResource OutcomeToBrushConverter}}" />
+                                                     Fill="{Binding Outcome, Converter={StaticResource OutcomeToBrushConverter}}" />
                                         </Border>
                                         <StackPanel Grid.Column="1" Margin="11,0,8,0" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Diagnosis.Headline}" FontSize="12" FontWeight="SemiBold"
+                                            <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold"
                                                        TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-                                            <TextBlock Text="{Binding CompletedAtUtc, Converter={StaticResource DateTimeTextConverter}}"
+                                            <TextBlock Text="{Binding OccurredAtUtc, Converter={StaticResource DateTimeTextConverter}}"
                                                        Foreground="{StaticResource MutedTextBrush}" FontSize="10"
                                                        Margin="0,3,0,0" TextWrapping="NoWrap" />
                                         </StackPanel>
@@ -124,7 +124,7 @@
 
             <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="0">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel DataContext="{Binding SelectedReport}" Margin="24">
+                    <StackPanel DataContext="{Binding SelectedItem}" Margin="24">
                         <Grid Margin="0,0,0,20">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -132,19 +132,20 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,9">
-                                    <Border Background="{Binding Diagnosis.Outcome, Converter={StaticResource OutcomeToTintBrushConverter}}"
+                                    <Border Background="{Binding Outcome, Converter={StaticResource OutcomeToTintBrushConverter}}"
                                             CornerRadius="10" Padding="9,4">
-                                        <TextBlock Text="{DynamicResource DiagnosisLabel}" Foreground="{Binding Diagnosis.Outcome, Converter={StaticResource OutcomeToBrushConverter}}"
+                                        <TextBlock Text="{Binding BadgeLabel}" Foreground="{Binding Outcome, Converter={StaticResource OutcomeToBrushConverter}}"
                                                    FontSize="9" FontWeight="Bold" TextWrapping="NoWrap" />
                                     </Border>
                                 </StackPanel>
-                                <TextBlock Text="{Binding Diagnosis.Headline}" FontFamily="{StaticResource DisplayFont}"
+                                <TextBlock Text="{Binding Title}" FontFamily="{StaticResource DisplayFont}"
                                            FontSize="22" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding Diagnosis.Summary}" Style="{StaticResource MutedTextStyle}"
+                                <TextBlock Text="{Binding Summary}" Style="{StaticResource MutedTextStyle}"
                                            Margin="0,5,30,0" />
                             </StackPanel>
                             <Button Grid.Column="1" Command="{Binding DataContext.ExportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Top"
+                                    Visibility="{Binding CanExport, Converter={StaticResource BooleanToVisibilityConverter}}"
                                     AutomationProperties.Name="{DynamicResource ExportSelectedAutomation}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xEDE1;" FontFamily="{StaticResource IconFont}" FontSize="13"
@@ -154,59 +155,132 @@
                             </Button>
                         </Grid>
 
-                        <Border Style="{StaticResource SoftCardStyle}" Padding="16" Margin="0,0,0,22">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock Text="{DynamicResource IpAddressMetric}" Style="{StaticResource MetricLabelStyle}" />
-                                    <TextBlock Text="{Binding Network.PrimaryIpAddress, Converter={StaticResource LocalizedTextConverter}}" FontSize="13" FontWeight="SemiBold"
-                                               Margin="0,6,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="14,0">
-                                    <TextBlock Text="{DynamicResource GatewayMetric}" Style="{StaticResource MetricLabelStyle}" />
-                                    <TextBlock Text="{Binding Network.PrimaryGateway, Converter={StaticResource LocalizedTextConverter}}" FontSize="13" FontWeight="SemiBold"
-                                               Margin="0,6,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="{DynamicResource DurationMetric}" Style="{StaticResource MetricLabelStyle}" />
-                                    <TextBlock Text="{Binding Duration.TotalSeconds, Converter={StaticResource DurationSecondsConverter}}" FontSize="13"
-                                               FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="NoWrap" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
+                        <StackPanel Visibility="{Binding IsDiagnostic, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Border Style="{StaticResource SoftCardStyle}" Padding="16" Margin="0,0,0,22">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{DynamicResource IpAddressMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                        <TextBlock Text="{Binding Report.Network.PrimaryIpAddress, Converter={StaticResource LocalizedTextConverter}}" FontSize="13" FontWeight="SemiBold"
+                                                   Margin="0,6,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="14,0">
+                                        <TextBlock Text="{DynamicResource GatewayMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                        <TextBlock Text="{Binding Report.Network.PrimaryGateway, Converter={StaticResource LocalizedTextConverter}}" FontSize="13" FontWeight="SemiBold"
+                                                   Margin="0,6,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="{DynamicResource DurationMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                        <TextBlock Text="{Binding Report.Duration.TotalSeconds, Converter={StaticResource DurationSecondsConverter}}" FontSize="13"
+                                                   FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="NoWrap" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
 
-                        <TextBlock Text="{DynamicResource ChecksInReport}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
-                        <ItemsControl ItemsSource="{Binding Checks}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="0,6">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <Border Width="28" Height="28" CornerRadius="9"
-                                                Background="{Binding Status, Converter={StaticResource OutcomeToBrushConverter}}"
-                                                VerticalAlignment="Top">
-                                            <TextBlock Text="{Binding Status, Converter={StaticResource StatusToGlyphConverter}}"
-                                                       Foreground="White" FontSize="11" FontWeight="Bold"
-                                                       HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="NoWrap" />
+                            <TextBlock Text="{DynamicResource ChecksInReport}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
+                            <ItemsControl ItemsSource="{Binding Report.Checks}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="28" Height="28" CornerRadius="9"
+                                                    Background="{Binding Status, Converter={StaticResource OutcomeToBrushConverter}}"
+                                                    VerticalAlignment="Top">
+                                                <TextBlock Text="{Binding Status, Converter={StaticResource StatusToGlyphConverter}}"
+                                                           Foreground="White" FontSize="11" FontWeight="Bold"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="NoWrap" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="10,0,14,0">
+                                                <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Summary}" Style="{StaticResource MutedTextStyle}" FontSize="11" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Text="{Binding Status, Converter={StaticResource StatusToLabelConverter}}"
+                                                       Foreground="{Binding Status, Converter={StaticResource OutcomeToBrushConverter}}"
+                                                       FontSize="9" FontWeight="Bold" VerticalAlignment="Top" Margin="0,4,0,0" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <StackPanel Visibility="{Binding IsSpeedTest, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Border Style="{StaticResource SoftCardStyle}" Padding="16" Margin="0,0,0,14">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{DynamicResource AverageDownloadMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                        <TextBlock Text="{Binding AverageDownloadText}" FontSize="14" FontWeight="SemiBold" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="14,0">
+                                        <TextBlock Text="{DynamicResource AverageUploadMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                        <TextBlock Text="{Binding AverageUploadText}" FontSize="14" FontWeight="SemiBold" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="{DynamicResource LatencyMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                        <TextBlock Text="{Binding LatencyText}" FontSize="14" FontWeight="SemiBold" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <Border Style="{StaticResource SoftCardStyle}" Padding="16">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{DynamicResource MaximumDownloadMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                        <TextBlock Text="{Binding PeakDownloadText}" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="14,0">
+                                        <TextBlock Text="{DynamicResource MaximumUploadMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                        <TextBlock Text="{Binding PeakUploadText}" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="{DynamicResource TestDurationMetric}" Style="{StaticResource MetricLabelStyle}" />
+                                        <TextBlock Text="{Binding DurationText}" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,0" />
+                                        <TextBlock Text="{Binding DataUsedText}" Foreground="{StaticResource MutedTextBrush}" FontSize="10" Margin="0,3,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Visibility="{Binding IsConfigurationChange, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="{DynamicResource ChangedValues}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
+                            <ItemsControl ItemsSource="{Binding ChangedSettings}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource SoftCardStyle}" Padding="14" Margin="0,0,0,8">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding SettingLabel}" FontSize="12" FontWeight="SemiBold" />
+                                                <Grid Margin="0,8,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding PreviousValue}" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Column="1" Text="→" Foreground="{StaticResource PrimaryBrush}" Margin="12,0" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding NewValue}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                </Grid>
+                                            </StackPanel>
                                         </Border>
-                                        <StackPanel Grid.Column="1" Margin="10,0,14,0">
-                                            <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" />
-                                            <TextBlock Text="{Binding Summary}" Style="{StaticResource MutedTextStyle}" FontSize="11" />
-                                        </StackPanel>
-                                        <TextBlock Grid.Column="2" Text="{Binding Status, Converter={StaticResource StatusToLabelConverter}}"
-                                                   Foreground="{Binding Status, Converter={StaticResource OutcomeToBrushConverter}}"
-                                                   FontSize="9" FontWeight="Bold" VerticalAlignment="Top" Margin="0,4,0,0" />
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </Border>
